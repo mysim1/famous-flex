@@ -292,21 +292,21 @@ define(function(require, exports, module) {
      * Helper function for logging debug statements to the console.
      */
     /*function _log(args) {
-        if (!this.options.debug) {
-            return;
-        }
-        var message = this._debug.commitCount + ': ';
-        for (var i = 0, j = arguments.length; i < j; i++) {
-            var arg = arguments[i];
-            if ((arg instanceof Object) || (arg instanceof Array)) {
-                message += JSON.stringify(arg);
-            }
-            else {
-                message += arg;
-            }
-        }
-        console.log(message);
-    }*/
+     if (!this.options.debug) {
+     return;
+     }
+     var message = this._debug.commitCount + ': ';
+     for (var i = 0, j = arguments.length; i < j; i++) {
+     var arg = arguments[i];
+     if ((arg instanceof Object) || (arg instanceof Array)) {
+     message += JSON.stringify(arg);
+     }
+     else {
+     message += arg;
+     }
+     }
+     console.log(message);
+     }*/
 
     /**
      * Sets the value for the spring, or set to `undefined` to disable the spring
@@ -375,8 +375,8 @@ define(function(require, exports, module) {
         // lies within the thresshold. A move of 10 pixels x and 10 pixels y is considered 45 deg,
         // which corresponds to a thresshold of 0.5.
         var moveDirection = Math.atan2(
-            Math.abs(event.clientY - this._scroll.mouseMove.prev[1]),
-            Math.abs(event.clientX - this._scroll.mouseMove.prev[0])) / (Math.PI / 2.0);
+                Math.abs(event.clientY - this._scroll.mouseMove.prev[1]),
+                Math.abs(event.clientX - this._scroll.mouseMove.prev[0])) / (Math.PI / 2.0);
         var directionDiff = Math.abs(this._direction - moveDirection);
         if ((this.options.touchMoveDirectionThresshold === undefined) || (directionDiff <= this.options.touchMoveDirectionThresshold)){
             this._scroll.mouseMove.prev = this._scroll.mouseMove.current;
@@ -505,8 +505,8 @@ define(function(require, exports, module) {
                     // lies within the thresshold. A move of 10 pixels x and 10 pixels y is considered 45 deg,
                     // which corresponds to a thresshold of 0.5.
                     var moveDirection = Math.atan2(
-                        Math.abs(changedTouch.clientY - touch.prev[1]),
-                        Math.abs(changedTouch.clientX - touch.prev[0])) / (Math.PI / 2.0);
+                            Math.abs(changedTouch.clientY - touch.prev[1]),
+                            Math.abs(changedTouch.clientX - touch.prev[0])) / (Math.PI / 2.0);
                     var directionDiff = Math.abs(this._direction - moveDirection);
                     if ((this.options.touchMoveDirectionThresshold === undefined) || (directionDiff <= this.options.touchMoveDirectionThresshold)){
                         touch.prev = touch.current;
@@ -636,8 +636,8 @@ define(function(require, exports, module) {
         if (this._scroll.scrollDelta || this._scroll.normalizedScrollDelta) {
             scrollOffset += this._scroll.scrollDelta + this._scroll.normalizedScrollDelta;
             if (((this._scroll.boundsReached & Bounds.PREV) && (scrollOffset > this._scroll.springPosition)) ||
-               ((this._scroll.boundsReached & Bounds.NEXT) && (scrollOffset < this._scroll.springPosition)) ||
-               (this._scroll.boundsReached === Bounds.BOTH)) {
+                ((this._scroll.boundsReached & Bounds.NEXT) && (scrollOffset < this._scroll.springPosition)) ||
+                (this._scroll.boundsReached === Bounds.BOTH)) {
                 scrollOffset = this._scroll.springPosition;
             }
             if (normalize) {
@@ -819,7 +819,7 @@ define(function(require, exports, module) {
             node = this._nodes.getStartEnumNode(false);
             while (node) {
                 if (!node._invalidated || (node.scrollLength === undefined)) {
-                   break;
+                    break;
                 }
                 if (!this.options.alignment) {
                     scrollToOffset += node.scrollLength;
@@ -865,7 +865,7 @@ define(function(require, exports, module) {
                     }
                     else {
                         if (!foundNode.trueSizeRequested) {
-                          this._scroll.ensureVisibleRenderNode = undefined;
+                            this._scroll.ensureVisibleRenderNode = undefined;
                         }
                     }
                 }
@@ -1524,15 +1524,6 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Checks whether user is touching the ScrollController.
-     *
-     * @return {Bool} true when user is touching the ScrollController
-     */
-    ScrollController.prototype.isTouching = function() {
-        return this._scroll.activeTouches.length > 0;
-    };
-
-    /**
      * Checks whether any boundaries have been reached.
      *
      * @return {ScrollController.Bounds} Either, Bounds.PREV, Bounds.NEXT, Bounds.BOTH or Bounds.NONE
@@ -1657,7 +1648,7 @@ define(function(require, exports, module) {
         return this;
     };
 
-     /**
+    /**
      * Get the spec (size, transform, etc..) for the given renderable or
      * Id.
      *
@@ -1870,7 +1861,7 @@ define(function(require, exports, module) {
             if (this.options.flow && (this._isDirty ||
                 (this.options.flowOptions.reflowOnResize &&
                 ((size[0] !== this._contextSizeCache[0]) ||
-                 (size[1] !== this._contextSizeCache[1]))))) {
+                (size[1] !== this._contextSizeCache[1]))))) {
                 var node = this._nodes.getStartEnumNode();
                 while (node) {
                     node.releaseLock(true);
@@ -1905,7 +1896,7 @@ define(function(require, exports, module) {
         var result = this._nodes.buildSpecAndDestroyUnrenderedNodes(sequentialScrollingOptimized ? groupTranslate : undefined);
         this._specs = result.specs;
         if (!this._specs.length) {
-          this._scroll.groupStart = 0;
+            this._scroll.groupStart = 0;
         }
         if (eventData) { // eventData is only used here to check whether there has been a re-layout
             this._eventOutput.emit('layoutend', eventData);
