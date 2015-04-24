@@ -233,6 +233,8 @@ define(function(require, exports, module) {
         touchMoveDirectionThresshold: undefined, // 0..1
         touchMoveNoVelocityDuration: 100,
         mouseMove: false,
+        scrollWheelForces: false,
+        scrollWheelForceStep: 120,
         enabled: true,          // set to false to disable scrolling
         layoutAll: false,       // set to true is you want all renderables layed out/rendered
         alwaysLayout: false,    // set to true to always call the layout function
@@ -584,7 +586,16 @@ define(function(require, exports, module) {
         if (!this.options.enabled) {
             return;
         }
+
         var offset = Array.isArray(event.delta) ? event.delta[this._direction] : event.delta;
+
+        if(this.options.scrollWheelForces){
+            var velocity = offset / this.options.scrollWheelForceStep;
+
+            this.applyScrollForce(0);
+            this.releaseScrollForce(0, velocity);
+        }
+
         this.scroll(offset);
     }
 
