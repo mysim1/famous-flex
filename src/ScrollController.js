@@ -592,11 +592,11 @@ define(function(require, exports, module) {
         if(this.options.scrollWheelForces){
             var velocity = offset / this.options.scrollWheelForceStep;
 
-            this.applyScrollForce(0);
-            this.releaseScrollForce(0, velocity);
+            this.applyScrollForce(offset);
+            this.releaseScrollForce(offset, velocity);
+        } else {
+            this.scroll(offset);
         }
-
-        this.scroll(offset);
     }
 
     /**
@@ -1521,6 +1521,15 @@ define(function(require, exports, module) {
      */
     ScrollController.prototype.isScrolling = function() {
         return this._scroll.isScrolling;
+    };
+
+    /**
+     * Checks whether user is touching the ScrollController.
+     *
+     * @return {Bool} true when user is touching the ScrollController
+     */
+    ScrollController.prototype.isTouching = function() {
+        return this._scroll.activeTouches.length > 0;
     };
 
     /**
