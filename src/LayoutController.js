@@ -294,12 +294,15 @@ define(function(require, exports, module) {
      */
     LayoutController.prototype.setDataSource = function(dataSource) {
         this._dataSource = dataSource;
+        this._initialViewSequence = undefined;
         this._nodesById = undefined;
         if (dataSource instanceof Array) {
             this._viewSequence = new ViewSequence(dataSource);
+            this._initialViewSequence = this._viewSequence;
         }
         else if ((dataSource instanceof ViewSequence) || dataSource.getNext) {
             this._viewSequence = dataSource;
+            this._initialViewSequence = dataSource;
         }
         else if (dataSource instanceof Object){
             this._nodesById = dataSource;
@@ -583,10 +586,15 @@ define(function(require, exports, module) {
             if (this._dataSource === undefined) {
                 this._dataSource = [];
                 this._viewSequence = new ViewSequence(this._dataSource);
+                this._initialViewSequence = this._viewSequence;
             }
 
             // Insert into array
             var dataSource = this._viewSequence || this._dataSource;
+            var array = _getDataSourceArray.call(this);
+            if (array && (indexOrId === array.length)) {
+                indexOrId = -1;
+            }
             if (indexOrId === -1) {
                 dataSource.push(renderable);
             }
@@ -701,7 +709,7 @@ define(function(require, exports, module) {
      */
     LayoutController.prototype.get = function(indexOrId) {
       if (this._nodesById || (indexOrId instanceof String) || (typeof indexOrId === 'string')) {
-        return this._nodesById[indexOrId];
+        return this._nodesById ? this._nodesById[indexOrId] : undefined;
       }
       var viewSequence = _getViewSequenceAtIndex.call(this, indexOrId);
       return viewSequence ? viewSequence.get() : undefined;
@@ -861,8 +869,8 @@ define(function(require, exports, module) {
         // in the famo.us ViewSequence implementation/concept. The following check was added
         // to ensure that always a valid viewSequence node is selected into the ScrollView.
         if (this._viewSequence && renderNode) {
-            var viewSequence = _getViewSequenceAtIndex.call(this, this._viewSequence.getIndex(), this._dataSource);
-            viewSequence = viewSequence || _getViewSequenceAtIndex.call(this, this._viewSequence.getIndex() - 1, this._dataSource);
+            var viewSequence = _getViewSequenceAtIndex.call(this, this._viewSequence.getIndex(), this._initialViewSequence);
+            viewSequence = viewSequence || _getViewSequenceAtIndex.call(this, this._viewSequence.getIndex() - 1, this._initialViewSequence);
             viewSequence = viewSequence || this._dataSource;
             this._viewSequence = viewSequence;
         }
