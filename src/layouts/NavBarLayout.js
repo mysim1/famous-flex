@@ -17,6 +17,7 @@
  * |options|type|description|
  * |---|---|---|
  * |`[margins]`|Number/Array|Margins shorthand (e.g. 5, [10, 20], [2, 5, 2, 10])|
+ * |`[zIncrement]`|Z-translation increment used to stack the elements correctly (default: 2)|
  * |`[itemWidth]`|Number|Width of the left & right items|
  * |`[leftItemWidth]`|Number|Width of the left items|
  * |`[rightItemWidth]`|Number|Width of the right items|
@@ -66,7 +67,7 @@ define(function(require, exports, module) {
     module.exports = function NavBarLayout(context, options) {
         var dock = new LayoutDockHelper(context, {
             margins: options.margins,
-            translateZ: 1
+            translateZ: options.hasOwnProperty('zIncrement') ? options.zIncrement : 2
         });
 
         // Position background
@@ -120,7 +121,7 @@ define(function(require, exports, module) {
             right = Math.min(right, context.size[0] - left);
             context.set(title, {
                 size: [right - left, context.size[1]],
-                translate: [left, 0, 0]
+                translate: [left, 0, dock.get().z]
             });
         }
     };
