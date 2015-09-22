@@ -1116,5 +1116,21 @@ define(function(require, exports, module) {
         }
     };
 
+    /**
+     * Subscribes to the given event type exactly once; it automatically unsubscribes after the first time it is triggered.
+     * @param {String} event One of the following Event Types: 'value', 'child_changed', 'child_moved', 'child_removed'.
+     * @param {Function} handler Function that is called when the given event type is emitted.
+     * @param {Object} context Optional: context of 'this' inside the handler function when it is called.
+     */
+    LayoutController.prototype.once = function(event, handler, context) {
+        return this.on(event, function onceWrapper() {
+            /* TODO: bug in traceur preventing us from using ...arguments as expected: https://github.com/google/traceur-compiler/issues/1118
+             * We want to do this: handler.call(context, ...arguments); */
+            handler.call(context, arguments);
+            this.removeListener(event, onceWrapper);
+        }, this);
+    };
+
+
     module.exports = LayoutController;
 });
