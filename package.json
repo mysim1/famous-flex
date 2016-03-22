@@ -71,6 +71,11 @@
     "dist/famous-flex.min.js",
     "LICENSE"
   ],
+  "jspm": {
+    "directories": {
+      "lib": "src"
+    }
+  },
   "browserify": {
     "transform": [
       "deamdify"
