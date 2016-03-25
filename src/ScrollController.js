@@ -53,7 +53,7 @@ define(function(require, exports, module) {
     var Drag = require('famous/physics/forces/Drag');
     var Spring = require('famous/physics/forces/Spring');
     var ScrollSync = require('famous/inputs/ScrollSync');
-    var ViewSequence = require('famous/core/ViewSequence');
+    var LinkedListViewSequence = require('./LinkedListViewSequence');
 
     /**
      * Boudary reached detection
@@ -444,7 +444,9 @@ define(function(require, exports, module) {
         }
 
         // Release scroll force
-        this.releaseScrollForce(this._scroll.mouseMove.delta, velocity);
+        var swipeDirection = (Math.abs(this._scroll.mouseMove.current[0] - this._scroll.mouseMove.prev[0]) > Math.abs(this._scroll.mouseMove.current[1] - this._scroll.mouseMove.prev[1])) ? 0 : 1;
+        var allowSwipes = (swipeDirection === this._direction);
+        this.releaseScrollForce(this._scroll.mouseMove.delta, velocity, allowSwipes);
         this._scroll.mouseMove = undefined;
     }
 
@@ -611,7 +613,9 @@ define(function(require, exports, module) {
 
         // Release scroll force
         var delta = this._scroll.touchDelta;
-        this.releaseScrollForce(delta, velocity);
+        var swipeDirection = (Math.abs(primaryTouch.current[0] - primaryTouch.prev[0]) > Math.abs(primaryTouch.current[1] - primaryTouch.prev[1])) ? 0 : 1;
+        var allowSwipes = (swipeDirection === this._direction);
+        this.releaseScrollForce(delta, velocity, allowSwipes);
         this._scroll.touchDelta = 0;
     }
 
@@ -645,6 +649,9 @@ define(function(require, exports, module) {
             this._scroll.particleValue = position;
             this._scroll.particle.setPosition1D(position);
             //_log.call(this, 'setParticle.position: ', position, ' (old: ', oldPosition, ', delta: ', position - oldPosition, ', phase: ', phase, ')');
+            if (this._scroll.springValue !== undefined) {
+                this._scroll.pe.wake();
+            }
         }
         if (velocity !== undefined) {
             var oldVelocity = this._scroll.particle.getVelocity1D();
@@ -918,7 +925,6 @@ define(function(require, exports, module) {
         if (this._scroll.scrollToDirection) {
             this._scroll.springPosition = scrollOffset - size[this._direction];
             this._scroll.springSource = SpringSource.GOTONEXTDIRECTION;
-
         }
         else {
             this._scroll.springPosition = scrollOffset + size[this._direction];
@@ -997,8 +1003,10 @@ define(function(require, exports, module) {
                     normalizeNextPrev = (scrollOffset >= 0);
                 }
                 else {
-                    this._viewSequence = node._viewSequence;
-                    normalizedScrollOffset = scrollOffset;
+                    if (Math.round(scrollOffset) >= 0) {
+                        this._viewSequence = node._viewSequence;
+                        normalizedScrollOffset = scrollOffset;
+                    }
                 }
             }
             node = node._prev;
@@ -1011,7 +1019,7 @@ define(function(require, exports, module) {
         var node = this._nodes.getStartEnumNode(true);
         while (node) {
             if (!node._invalidated || (node.scrollLength === undefined) || node.trueSizeRequested || !node._viewSequence ||
-                ((scrollOffset > 0) && (!this.options.alignment || (node.scrollLength !== 0)))) {
+                ((Math.round(scrollOffset) > 0) && (!this.options.alignment || (node.scrollLength !== 0)))) {
                 break;
             }
             if (this.options.alignment) {
@@ -1072,7 +1080,7 @@ define(function(require, exports, module) {
             var particleValue = this._scroll.particle.getPosition1D();
             //var particleValue = this._scroll.particleValue;
             _setParticle.call(this, particleValue + delta, undefined, 'normalize');
-            //_log.call(this, 'normalized scrollOffset: ', normalizedScrollOffset, ', old: ', scrollOffset, ', particle: ', particleValue + delta);
+            //console.log('normalized scrollOffset: ', normalizedScrollOffset, ', old: ', scrollOffset, ', particle: ', particleValue + delta);
 
             // Adjust scroll spring
             if (this._scroll.springPosition !== undefined) {
@@ -1094,7 +1102,7 @@ define(function(require, exports, module) {
      * following properties. Example:
      * ```javascript
      * {
-     *   viewSequence: {ViewSequence},
+     *   viewSequence: {LinkedListViewSequence},
      *   index: {Number},
      *   renderNode: {renderable},
      *   visiblePerc: {Number} 0..1
@@ -1430,13 +1438,13 @@ define(function(require, exports, module) {
      * When the node is already visible, nothing happens. If the node is not entirely visible
      * the view is scrolled as much as needed to make it entirely visibl.
      *
-     * @param {Number|ViewSequence|Renderable} node index, renderNode or ViewSequence
+     * @param {Number|LinkedListViewSequence|Renderable} node index, renderNode or LinkedListViewSequence
      * @return {ScrollController} this
      */
     ScrollController.prototype.ensureVisible = function(node) {
 
         // Convert argument into renderNode
-        if (node instanceof ViewSequence) {
+        if (node instanceof LinkedListViewSequence) {
             node = node.get();
         }
         else if ((node instanceof Number) || (typeof node === 'number')) {
@@ -1667,7 +1675,7 @@ define(function(require, exports, module) {
      * @param {Number} [velocity] Velocity to apply after which the view keeps scrolling
      * @return {ScrollController} this
      */
-    ScrollController.prototype.releaseScrollForce = function(delta, velocity) {
+    ScrollController.prototype.releaseScrollForce = function(delta, velocity, detectSwipes) {
         this.halt();
         if (this._scroll.scrollForceCount === 1) {
             var scrollOffset = _calcScrollOffset.call(this);
@@ -1681,7 +1689,7 @@ define(function(require, exports, module) {
                     if (item.renderNode !== this._scroll.scrollForceStartItem.renderNode) {
                         this.goToRenderNode(item.renderNode);
                     }
-                    else if (this.options.paginationEnergyThreshold && (Math.abs(this._scroll.particle.getEnergy()) >= this.options.paginationEnergyThreshold)) {
+                    else if (detectSwipes && this.options.paginationEnergyThreshold && (Math.abs(this._scroll.particle.getEnergy()) >= this.options.paginationEnergyThreshold)) {
                         velocity = velocity || 0;
                         if ((velocity < 0) && item._node._next && item._node._next.renderNode) {
                             this.goToRenderNode(item._node._next.renderNode);
@@ -1754,6 +1762,18 @@ define(function(require, exports, module) {
         // Determine start & end
         var scrollStart = 0 - Math.max(this.options.extraBoundsSpace[0], 1);
         var scrollEnd = size[this._direction] + Math.max(this.options.extraBoundsSpace[1], 1);
+        if (this.options.paginated && (this.options.paginationMode === PaginationMode.PAGE)) {
+            scrollStart = scrollOffset - this.options.extraBoundsSpace[0];
+            scrollEnd = scrollOffset + size[this._direction] + this.options.extraBoundsSpace[1];
+            if ((scrollOffset + size[this._direction]) < 0) {
+                scrollStart += size[this._direction];
+                scrollEnd += size[this._direction];
+            }
+            else if ((scrollOffset - size[this._direction]) > 0) {
+                scrollStart -= size[this._direction];
+                scrollEnd -= size[this._direction];
+            }
+        }
         if (this.options.layoutAll) {
             scrollStart = -1000000;
             scrollEnd = 1000000;
