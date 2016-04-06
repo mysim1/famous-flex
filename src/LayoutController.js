@@ -298,6 +298,7 @@ define(function(require, exports, module) {
         }
         else if (dataSource instanceof Array) {
             this._viewSequence = new LinkedListViewSequence(dataSource);
+            this._dataSource = this._viewSequence;
         }
         else if (dataSource instanceof LinkedListViewSequence) {
             this._viewSequence = dataSource;
