@@ -85,8 +85,11 @@ define(function(require, exports, module) {
             var scale = (this && (this.scale !== undefined)) ? this.scale : 0.5;
             return {
                 transform: Transform.scale(scale, scale, 1),
-                align: [0.5, 0.5],
-                origin: [0.5, 0.5]
+                /*
+                 TODO: This doesn't work because for some reason animationcontroller treats the context as true if the size property
+                 of the surface is set to true
+                 align: [0.5, 0.5],
+                 origin: [0.5, 0.5]*/
             };
         },
         FadedZoom: function(show /*, size*/) {
@@ -94,25 +97,25 @@ define(function(require, exports, module) {
             return {
                 opacity: (this && (this.opacity !== undefined)) ? this.opacity : 0,
                 transform: Transform.scale(scale, scale, 1),
-                align: [0.5, 0.5],
-                origin: [0.5, 0.5]
+                /*align: [0.5, 0.5],
+                 origin: [0.5, 0.5]*/
             };
         }
         /*,
-        Flip: {
-            Left: function(show, size) {
-                return {transform: Transform.rotate(0, show ? Math.PI : -Math.PI, 0)};
-            },
-            Right: function(show, size) {
-                return {transform: Transform.rotate(0, show ? -Math.PI : Math.PI, 0)};
-            },
-            Up: function(show, size) {
-                return {transform: Transform.rotate(show ? Math.PI : -Math.PI, 0, 0)};
-            },
-            Down: function(show, size) {
-                return {transform: Transform.rotate(show ? -Math.PI : Math.PI, 0, 0)};
-            }
-        }*/
+         Flip: {
+         Left: function(show, size) {
+         return {transform: Transform.rotate(0, show ? Math.PI : -Math.PI, 0)};
+         },
+         Right: function(show, size) {
+         return {transform: Transform.rotate(0, show ? -Math.PI : Math.PI, 0)};
+         },
+         Up: function(show, size) {
+         return {transform: Transform.rotate(show ? Math.PI : -Math.PI, 0, 0)};
+         },
+         Down: function(show, size) {
+         return {transform: Transform.rotate(show ? -Math.PI : Math.PI, 0, 0)};
+         }
+         }*/
     };
 
     AnimationController.DEFAULT_OPTIONS = {
