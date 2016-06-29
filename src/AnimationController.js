@@ -92,6 +92,15 @@ define(function(require, exports, module) {
                  origin: [0.5, 0.5]*/
             };
         },
+        FadedRotateZoom: function(show /*, size*/) {
+            var scale = show ? ((this && (this.showScale !== undefined)) ? this.showScale : 0.9) : ((this && (this.hideScale !== undefined)) ? this.hideScale : 1.1);
+            return {
+                opacity: (this && (this.opacity !== undefined)) ? this.opacity : 0,
+                transform: Transform.thenScale(Transform.rotateZ(48*Math.PI/scale),[scale, scale, 1]),
+                origin: [0.5, 0.5],
+                align: [0.5, 0.5]
+            };
+        },
         FadedZoom: function(show /*, size*/) {
             var scale = show ? ((this && (this.showScale !== undefined)) ? this.showScale : 0.9) : ((this && (this.hideScale !== undefined)) ? this.hideScale : 1.1);
             return {
