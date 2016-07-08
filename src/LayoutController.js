@@ -71,16 +71,16 @@ define(function(require, exports, module) {
         // Create an object to we can capture the famo.us cleanup call on
         // LayoutController.
         this._cleanupRegistration = {
-          commit: function() {
-              return undefined;
-          },
-          cleanup: function(context) {
-              this.cleanup(context);
-          }.bind(this)
+            commit: function() {
+                return undefined;
+            },
+            cleanup: function(context) {
+                this.cleanup(context);
+            }.bind(this)
         };
         this._cleanupRegistration.target = Entity.register(this._cleanupRegistration);
         this._cleanupRegistration.render = function() {
-          return this.target;
+            return this.target;
         }.bind(this._cleanupRegistration);
 
         // Setup input event handler
@@ -150,19 +150,19 @@ define(function(require, exports, module) {
                 period: 300
             }
             /*insertSpec: {
-                opacity: undefined,
-                size: undefined,
-                transform: undefined,
-                origin: undefined,
-                align: undefined
-            },
-            removeSpec: {
-                opacity: undefined,
-                size: undefined,
-                transform: undefined,
-                origin: undefined,
-                align: undefined
-            }*/
+             opacity: undefined,
+             size: undefined,
+             transform: undefined,
+             origin: undefined,
+             align: undefined
+             },
+             removeSpec: {
+             opacity: undefined,
+             size: undefined,
+             transform: undefined,
+             origin: undefined,
+             align: undefined
+             }*/
         }
     };
 
@@ -351,7 +351,7 @@ define(function(require, exports, module) {
             this._layout.capabilities = layout.Capabilities;
             this._layout.literal = undefined;
 
-        // If the layout is an object, treat it as a layout-literal
+            // If the layout is an object, treat it as a layout-literal
         }
         else if (layout instanceof Object) {
             this._layout.literal = layout;
@@ -487,7 +487,7 @@ define(function(require, exports, module) {
         }
         if ((node instanceof String) || (typeof node === 'string')) {
             if (!this._nodesById) {
-               return undefined;
+                return undefined;
             }
             node = this._nodesById[node];
             if (!node) {
@@ -675,11 +675,11 @@ define(function(require, exports, module) {
      * @return {Renderable} renderable or `undefined`
      */
     LayoutController.prototype.get = function(indexOrId) {
-      if (this._nodesById || (indexOrId instanceof String) || (typeof indexOrId === 'string')) {
-        return this._nodesById ? this._nodesById[indexOrId] : undefined;
-      }
-      var viewSequence = _getViewSequenceAtIndex.call(this, indexOrId);
-      return viewSequence ? viewSequence.get() : undefined;
+        if (this._nodesById || (indexOrId instanceof String) || (typeof indexOrId === 'string')) {
+            return this._nodesById ? this._nodesById[indexOrId] : undefined;
+        }
+        var viewSequence = _getViewSequenceAtIndex.call(this, indexOrId);
+        return viewSequence ? viewSequence.get() : undefined;
     };
 
     /**
@@ -728,7 +728,7 @@ define(function(require, exports, module) {
         oldRenderable = sequence.get();
         sequence.set(renderable);
         if (oldRenderable !== renderable) {
-          this._isDirty = true;
+            this._isDirty = true;
         }
         return oldRenderable;
     };
@@ -745,7 +745,7 @@ define(function(require, exports, module) {
     LayoutController.prototype.move = function(index, newIndex) {
         var sequence = this._viewSequence.findByIndex(index);
         if (!sequence) {
-          throw 'Invalid index (' + index + ') specified to .move';
+            throw 'Invalid index (' + index + ') specified to .move';
         }
         this._viewSequence = this._viewSequence.remove(sequence);
         this._viewSequence.insert(newIndex, sequence.get());
@@ -920,11 +920,11 @@ define(function(require, exports, module) {
                 if (!this.options.flowOptions.reflowOnResize) {
                     if (!this._isDirty &&
                         ((size[0] !== this._contextSizeCache[0]) ||
-                         (size[1] !== this._contextSizeCache[1]))) {
+                        (size[1] !== this._contextSizeCache[1]))) {
                         lock = undefined;
                     }
                     else {
-                      lock = true;
+                        lock = true;
                     }
                 }
                 if (lock !== undefined) {
