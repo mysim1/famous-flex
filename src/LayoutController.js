@@ -705,7 +705,7 @@ define(function(require, exports, module) {
      * @param {Bool} [noAnimation] When set to `true`, replaces the renderable without any flowing animation.
      * @return {Renderable} old renderable that has been replaced
      */
-    LayoutController.prototype.replace = function(indexOrId, renderable, noAnimation) {
+    LayoutController.prototype.replace = function(indexOrId, renderable, noAnimation, sequence) {
         var oldRenderable;
         if (this._nodesById || (indexOrId instanceof String) || (typeof indexOrId === 'string')) {
             oldRenderable = this._nodesById[indexOrId];
@@ -721,14 +721,24 @@ define(function(require, exports, module) {
             }
             return oldRenderable;
         }
-        var sequence = this._viewSequence.findByIndex(indexOrId);
+        if(!sequence){
+            sequence = this._viewSequence.findByIndex(indexOrId);
+        }
         if (!sequence) {
             throw 'Invalid index (' + indexOrId + ') specified to .replace';
         }
         oldRenderable = sequence.get();
         sequence.set(renderable);
         if (oldRenderable !== renderable) {
-            this._isDirty = true;
+            if (noAnimation && oldRenderable) {
+                var node = this._nodes.getNodeByRenderNode(oldRenderable);
+                if (node) {
+                    node.setRenderNode(renderable);
+                }
+            } else {
+                this._isDirty = true;
+            }
+
         }
         return oldRenderable;
     };

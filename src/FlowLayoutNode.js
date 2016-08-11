@@ -36,6 +36,7 @@ define(function(require, exports, module) {
     function FlowLayoutNode(renderNode, spec) {
         LayoutNode.apply(this, arguments);
 
+        /* Recreating the objects because constructor can be called twice */
         if (!this.options) {
             this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
             this._optionsManager = new OptionsManager(this.options);
@@ -407,9 +408,9 @@ define(function(require, exports, module) {
             else if (this._removing) {
                 value = prop.particle.getPosition();
             }
-            //if (isTranslate && (this._lockDirection !== undefined) && (this._lockTransitionable.get() === 1)) {
-            //    immediate = true; // this is a bit dirty, it should check !_lockDirection for non changes as well before setting immediate to true
-            //}
+/*            if (isTranslate && (this._lockTransitionable.get() === 1)) {
+               immediate = true; // this is a bit dirty, it should check !_lockDirection for non changes as well before setting immediate to true
+            }*/
             // set new end state (the quick way)
             prop.endState.x = value[0];
             prop.endState.y = (value.length > 1) ? value[1] : 0;

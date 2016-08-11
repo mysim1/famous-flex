@@ -314,8 +314,8 @@ define(function(require, exports, module) {
      */
     function _isSequentiallyScrollingOptimized() {
         return !this._layout.capabilities ||
-                (this._layout.capabilities.sequentialScrollingOptimized === undefined) ||
-                this._layout.capabilities.sequentialScrollingOptimized;
+            (this._layout.capabilities.sequentialScrollingOptimized === undefined) ||
+            this._layout.capabilities.sequentialScrollingOptimized;
     }
 
     /**
@@ -822,7 +822,7 @@ define(function(require, exports, module) {
     }
 
     /**
-     * Calculates the scrollto-offset to which the spring is set.
+     * Calculates the scrollto-offset to which the spring is set when doing scrollToRenderNode.
      */
     function _calcScrollToOffset(size, scrollOffset) {
         var scrollToRenderNode = this._scroll.scrollToRenderNode || this._scroll.ensureVisibleRenderNode;
@@ -1971,8 +1971,12 @@ define(function(require, exports, module) {
             // Emit end event
             eventData.scrollOffset = -(this._scrollOffsetCache + this._scroll.groupStart);
         }
-        else if (this._scroll.isScrolling && !this._scroll.scrollForceCount) {
-            emitEndScrollingEvent = true;
+        else {
+            if (this._scroll.isScrolling && !this._scroll.scrollForceCount) {
+                emitEndScrollingEvent = true;
+            }
+            /* Reset the ensureVisibleRenderNode to prevent unwanted behaviour when doing replace and not finding the renderable */
+            this._scroll.ensureVisibleRenderNode = undefined;
         }
 
         // Update output and optionally emit event
@@ -2022,6 +2026,7 @@ define(function(require, exports, module) {
         // Emit end scrolling event
         if (emitEndScrollingEvent) {
             this._scroll.isScrolling = false;
+            this._scroll.scrollDirty = true;
             eventData = {
                 target: this,
                 oldSize: size,
@@ -2055,6 +2060,21 @@ define(function(require, exports, module) {
             target: this.group.render()
         };
     };
+    
+    ScrollController.prototype.replace = function(indexOrId, renderable, noAnimation) {
+        var sequence;
+        //TODO: Check when _nodesById is used as well
+        if (!this._nodesById){
+            sequence = this._viewSequence.findByIndex(indexOrId);
+            var oldRenderable = sequence.get();
+            if (oldRenderable !== renderable && noAnimation && oldRenderable && (this._scroll.ensureVisibleRenderNode === oldRenderable)) {
+                this._scroll.ensureVisibleRenderNode = renderable;
+            }
+        }
+        return LayoutController.prototype.replace.call(this, indexOrId, renderable, noAnimation, sequence);
+
+
+    }
 
     /**
      * Generate a render spec from the contents of this component.
