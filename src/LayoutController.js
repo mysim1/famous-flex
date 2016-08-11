@@ -1062,7 +1062,7 @@ define(function(require, exports, module) {
      */
     LayoutController.prototype.once = function(event, handler, context) {
         return this.on(event, function onceWrapper() {
-            handler.call(context, ...arguments);
+            handler.apply(context, arguments);
             this.removeListener(event, onceWrapper);
         }, this);
     };
