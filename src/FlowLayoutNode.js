@@ -37,6 +37,7 @@ define(function(require, exports, module) {
         LayoutNode.apply(this, arguments);
 
         /* Recreating the objects because constructor can be called twice */
+
         if (!this.options) {
             this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
             this._optionsManager = new OptionsManager(this.options);
@@ -70,6 +71,8 @@ define(function(require, exports, module) {
         if (spec) {
             this.setSpec(spec);
         }
+        /* Assume non-existance by default */
+        this._exists = false;
     }
     FlowLayoutNode.prototype = Object.create(LayoutNode.prototype);
     FlowLayoutNode.prototype.constructor = FlowLayoutNode;
@@ -168,23 +171,7 @@ define(function(require, exports, module) {
      * Set the properties from a spec.
      */
     FlowLayoutNode.prototype.setSpec = function(spec) {
-        var set;
-        if (spec.transform) {
-            set = Transform.interpret(spec.transform);
-        }
-        if (!set) {
-            set = {};
-        }
-        set.opacity = spec.opacity;
-        set.size = spec.size;
-        set.align = spec.align;
-        set.origin = spec.origin;
-
-        var oldRemoving = this._removing;
-        var oldInvalidated = this._invalidated;
-        this.set(set);
-        this._removing = oldRemoving;
-        this._invalidated = oldInvalidated;
+        this._insertSpec = spec;
     };
 
     /**
@@ -227,13 +214,7 @@ define(function(require, exports, module) {
      * the renderables can smoothly transition to their new positions.
      */
     FlowLayoutNode.prototype.releaseLock = function(enable) {
-        this._lockTransitionable.halt();
-        this._lockTransitionable.reset(0);
-        if (enable) {
-          this._lockTransitionable.set(1, {
-              duration: this.options.spring.period || 1000
-          });
-        }
+        this._releaseLock = {enable:enable};
     };
 
     /**
@@ -254,6 +235,36 @@ define(function(require, exports, module) {
      * Creates the render-spec
      */
     FlowLayoutNode.prototype.getSpec = function() {
+
+        if(this._releaseLock){
+            var enable = this._releaseLock;
+            this._lockTransitionable.halt();
+            this._lockTransitionable.reset(0);
+            if (enable) {
+                this._lockTransitionable.set(1, {
+                    duration: this.options.spring.period || 1000
+                });
+            }
+            this._releaseLock = undefined;
+        }
+
+
+        if(this._insertSpec){
+            var insertSpec = this._insertSpec;
+            this._insertSpec = undefined;
+            var oldExists = this._exists;
+            var oldRemoving = this._removing;
+            var oldInvalidated = this._invalidated;
+            this.set(insertSpec);
+            this._exists = oldExists;
+            this._removing = oldRemoving;
+            this._invalidated = oldInvalidated;
+        }
+
+        if(!this._exists){
+            this._spec.removed = true;
+            return this._spec;
+        }
 
         // When the end state was reached, return the previous spec
         var endStateReached = this._pe.isSleeping();
@@ -492,6 +503,9 @@ define(function(require, exports, module) {
      * context.set(..)
      */
     FlowLayoutNode.prototype.set = function(set, defaultSize) {
+        /* If an insert spec is specified, we assume removed (non-existing) by default */
+        this._exists = true;
+
         if (defaultSize) {
             this._removing = false;
         }
@@ -501,14 +515,20 @@ define(function(require, exports, module) {
 
         // opacity
         var prop = this._properties.opacity;
-        var value = (set.opacity === DEFAULT.opacity) ? undefined : set.opacity;
-        if ((value !== undefined) || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'opacity', (value === undefined) ? undefined : [value, 0], DEFAULT.opacity2D);
+        var value = set.opacity !== undefined ? set.opacity : 1;
+        if(this._insertSpec && this._insertSpec.opacity !== undefined){
+            _setPropertyValue.call(this, prop, 'opacity', [this._insertSpec.opacity*value, 0], DEFAULT.opacity2D);
         }
+        _setPropertyValue.call(this, prop, 'opacity', [value, 0], DEFAULT.opacity2D);
+
 
         // set align
         prop = this._properties.align;
         value = set.align ? _getIfNE2D(set.align, DEFAULT.align) : undefined;
+        if(this._insertSpec && this._insertSpec.align){
+            var initial = this._insertSpec.align;
+            _setPropertyValue.call(this, prop, 'align',  initial, DEFAULT.align);
+        }
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'align', value, DEFAULT.align);
         }
@@ -516,34 +536,61 @@ define(function(require, exports, module) {
         // set orgin
         prop = this._properties.origin;
         value = set.origin ? _getIfNE2D(set.origin, DEFAULT.origin) : undefined;
+        if(this._insertSpec && this._insertSpec.origin){
+            var initial = this._insertSpec.origin;
+            _setPropertyValue.call(this, prop, 'origin',  initial, DEFAULT.origin);
+        }
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'origin', value, DEFAULT.origin);
         }
 
         // set size
+        // TODO: This doesn't seem to work for some reason
+        var hasInsertSize = false;
+        if(this._insertSpec && this._insertSpec.size){
+            hasInsertSize = true;
+            var initial = this._insertSpec.size;
+            _setPropertyValue.call(this, prop, 'size',  initial, defaultSize);
+        }
         prop = this._properties.size;
         value = set.size || defaultSize;
         if (value || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'size', value, defaultSize, this.usesTrueSize);
+            _setPropertyValue.call(this, prop, 'size', value, defaultSize, this.usesTrueSize && !hasInsertSize);
         }
 
         // set translate
         prop = this._properties.translate;
         value = set.translate;
         if (value || (prop && prop.init)) {
+            if(this._insertSpec && this._insertSpec.translate){
+                var initial = this._insertSpec.translate;
+                _setPropertyValue.call(this, prop, 'translate', [0,1,2].map(function(index){return initial[index] + value[index]}), DEFAULT.translate, undefined, true);
+            }
             _setPropertyValue.call(this, prop, 'translate', value, DEFAULT.translate, undefined, true);
         }
 
         // set scale
         prop = this._properties.scale;
         value = set.scale ? _getIfNE3D(set.scale, DEFAULT.scale) : undefined;
+        if(this._insertSpec && this._insertSpec.scale){
+            var initial = this._insertSpec.scale;
+            _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale);
+        }
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale);
+        } else {
+            value = DEFAULT.scale;
         }
+
+
 
         // set rotate
         prop = this._properties.rotate;
         value = set.rotate ? _getIfNE3D(set.rotate, DEFAULT.rotate) : undefined;
+        if(this._insertSpec && this._insertSpec.rotate){
+            var initial = this._insertSpec.rotate;
+            _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate);
+        }
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate);
         }
@@ -551,9 +598,14 @@ define(function(require, exports, module) {
         // set skew
         prop = this._properties.skew;
         value = set.skew ? _getIfNE3D(set.skew, DEFAULT.skew) : undefined;
+        if(this._insertSpec && this._insertSpec.skew){
+            var initial = this._insertSpec.skew;
+            _setPropertyValue.call(this, prop, 'skew', initial, DEFAULT.skew);
+        }
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew);
         }
+        this._insertSpec = undefined;
     };
 
     module.exports = FlowLayoutNode;

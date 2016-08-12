@@ -25,7 +25,7 @@
  *
  * @module
  */
-define(function(require, exports, module) {
+define(function (require, exports, module) {
 
     // import dependencies
     var Utility = require('famous/utilities/Utility');
@@ -54,7 +54,7 @@ define(function(require, exports, module) {
      * @param {Object} [options.flowOptions.spring] Spring options used by nodes when reflowing (default: `{dampingRatio: 0.8, period: 300}`).
      * @param {Object} [options.flowOptions.properties] Properties which should be enabled or disabled for flowing.
      * @param {Spec} [options.flowOptions.insertSpec] Size, transform, opacity... to use when inserting new renderables into the scene (default: `{}`).
-     * @param {Spec} [options.flowOptions.removeSpec] Size, transform, opacity... to use when removing renderables from the scene (default: `{}`).
+     * @param {Spec} [options.flowOptions.removeSpec] Size, transform, opacity... to use when removing renderables from the scene (default: undefined).
      * @param {Bool} [options.alwaysLayout] When set to true, always calls the layout function on every render-cycle (default: `false`).
      * @param {Bool} [options.autoPipeEvents] When set to true, automatically calls .pipe on all renderables when inserted (default: `false`).
      * @param {Object} [options.preallocateNodes] Optimisation option to improve initial scrolling/animation performance by pre-allocating nodes, e.g.: `{count: 50, spec: {size:[0, 0], transform: Transform.identity}}`.
@@ -67,19 +67,20 @@ define(function(require, exports, module) {
         this._isDirty = true;
         this._contextSizeCache = [0, 0];
         this._commitOutput = {};
+        this._dirtyRenderables = {nextTick: [], thisTick: []};
 
         // Create an object to we can capture the famo.us cleanup call on
         // LayoutController.
         this._cleanupRegistration = {
-            commit: function() {
+            commit: function () {
                 return undefined;
             },
-            cleanup: function(context) {
+            cleanup: function (context) {
                 this.cleanup(context);
             }.bind(this)
         };
         this._cleanupRegistration.target = Entity.register(this._cleanupRegistration);
-        this._cleanupRegistration.render = function() {
+        this._cleanupRegistration.render = function () {
             return this.target;
         }.bind(this._cleanupRegistration);
 
@@ -105,7 +106,7 @@ define(function(require, exports, module) {
         };
         //this._direction = undefined;
         this._layout.optionsManager = new OptionsManager(this._layout.options);
-        this._layout.optionsManager.on('change', function() {
+        this._layout.optionsManager.on('change', function () {
             this._isDirty = true;
         }.bind(this));
 
@@ -193,7 +194,7 @@ define(function(require, exports, module) {
      * @param {Bool} [options.alwaysLayout] When set to true, always calls the layout function on every render-cycle (default: `false`).
      * @return {LayoutController} this
      */
-    LayoutController.prototype.setOptions = function(options) {
+    LayoutController.prototype.setOptions = function (options) {
         if ((options.alignment !== undefined) && (options.alignment !== this.options.alignment)) {
             this._isDirty = true;
         }
@@ -286,7 +287,7 @@ define(function(require, exports, module) {
      * @param {Array|Object|LinkedListViewSequence} dataSource Array, LinkedListViewSequence or Object.
      * @return {LayoutController} this
      */
-    LayoutController.prototype.setDataSource = function(dataSource) {
+    LayoutController.prototype.setDataSource = function (dataSource) {
         this._dataSource = dataSource;
         this._nodesById = undefined;
         if (dataSource instanceof ViewSequence) {
@@ -306,7 +307,7 @@ define(function(require, exports, module) {
         else if (dataSource.getNext) {
             this._viewSequence = dataSource;
         }
-        else if (dataSource instanceof Object){
+        else if (dataSource instanceof Object) {
             this._nodesById = dataSource;
         }
         if (this.options.autoPipeEvents) {
@@ -315,7 +316,7 @@ define(function(require, exports, module) {
                 this._dataSource.pipe(this._eventOutput);
             }
             else {
-                _forEachRenderable.call(this, function(renderable) {
+                _forEachRenderable.call(this, function (renderable) {
                     if (renderable && renderable.pipe) {
                         renderable.pipe(this);
                         renderable.pipe(this._eventOutput);
@@ -332,7 +333,7 @@ define(function(require, exports, module) {
      *
      * @return {Array|LinkedListViewSequence|Object} data-source
      */
-    LayoutController.prototype.getDataSource = function() {
+    LayoutController.prototype.getDataSource = function () {
         return this._dataSource;
     };
 
@@ -343,7 +344,7 @@ define(function(require, exports, module) {
      * @param {Object} [options] Options to pass in to the layout-function
      * @return {LayoutController} this
      */
-    LayoutController.prototype.setLayout = function(layout, options) {
+    LayoutController.prototype.setLayout = function (layout, options) {
 
         // Set new layout funtion
         if (layout instanceof Function) {
@@ -358,7 +359,7 @@ define(function(require, exports, module) {
             this._layout.capabilities = undefined; // todo - derive from literal somehow?
             var helperName = Object.keys(layout)[0];
             var Helper = LayoutUtility.getRegisteredHelper(helperName);
-            this._layout._function = Helper ? function(context, options2) {
+            this._layout._function = Helper ? function (context, options2) {
                 var helper = new Helper(context, options2);
                 helper.parse(layout[helperName]);
             } : undefined;
@@ -385,7 +386,7 @@ define(function(require, exports, module) {
      *
      * @return {Function|Object} Layout function or layout literal
      */
-    LayoutController.prototype.getLayout = function() {
+    LayoutController.prototype.getLayout = function () {
         return this._layout.literal || this._layout._function;
     };
 
@@ -396,7 +397,7 @@ define(function(require, exports, module) {
      * @param {Object} [options] Options to pass in to the layout-function
      * @return {LayoutController} this
      */
-    LayoutController.prototype.setLayoutOptions = function(options) {
+    LayoutController.prototype.setLayoutOptions = function (options) {
         this._layout.optionsManager.setOptions(options);
         return this;
     };
@@ -406,7 +407,7 @@ define(function(require, exports, module) {
      *
      * @return {Object} Layout options
      */
-    LayoutController.prototype.getLayoutOptions = function() {
+    LayoutController.prototype.getLayoutOptions = function () {
         return this._layout.options;
     };
 
@@ -446,7 +447,7 @@ define(function(require, exports, module) {
      * @param {Utility.Direction} direction Direction (e.g. Utility.Direction.X)
      * @return {LayoutController} this
      */
-    LayoutController.prototype.setDirection = function(direction) {
+    LayoutController.prototype.setDirection = function (direction) {
         this._configuredDirection = direction;
         var newDirection = _getActualDirection.call(this, direction);
         if (newDirection !== this._direction) {
@@ -468,7 +469,7 @@ define(function(require, exports, module) {
      * @param {Boolean} [actual] Set to true to obtain the actual in-use direction
      * @return {Utility.Direction} Direction or undefined
      */
-    LayoutController.prototype.getDirection = function(actual) {
+    LayoutController.prototype.getDirection = function (actual) {
         return actual ? this._direction : this._configuredDirection;
     };
 
@@ -481,7 +482,7 @@ define(function(require, exports, module) {
      * @param {Bool} [endState] When set to `true` returns the flowing end-state spec rather than the current spec.
      * @return {Spec} spec or undefined
      */
-    LayoutController.prototype.getSpec = function(node, normalize, endState) {
+    LayoutController.prototype.getSpec = function (node, normalize, endState) {
         if (!node) {
             return undefined;
         }
@@ -533,7 +534,7 @@ define(function(require, exports, module) {
      *
      * @return {LayoutController} this
      */
-    LayoutController.prototype.reflowLayout = function() {
+    LayoutController.prototype.reflowLayout = function () {
         this._isDirty = true;
         return this;
     };
@@ -544,7 +545,7 @@ define(function(require, exports, module) {
      *
      * @return {LayoutController} this
      */
-    LayoutController.prototype.resetFlowState = function() {
+    LayoutController.prototype.resetFlowState = function () {
         if (this.options.flow) {
             this._resetFlowState = true;
         }
@@ -563,7 +564,8 @@ define(function(require, exports, module) {
      * @param {Spec} [insertSpec] Size, transform, etc.. to start with when inserting
      * @return {LayoutController} this
      */
-    LayoutController.prototype.insert = function(indexOrId, renderable, insertSpec) {
+    LayoutController.prototype.insert = function (indexOrId, renderable, insertSpec) {
+        insertSpec = insertSpec || this.options.flowOptions.insertSpec;
 
         // Add the renderable in case of an id (String)
         if ((indexOrId instanceof String) || (typeof indexOrId === 'string')) {
@@ -608,6 +610,13 @@ define(function(require, exports, module) {
         // Force a reflow
         this._isDirty = true;
 
+        /* If the renderable has or is a layoutController, we can store it in order to do more efficient reflows */
+        if (renderable instanceof LayoutController) {
+            this._dirtyRenderables.nextTick.push(renderable);
+        } else if (renderable.layout instanceof LayoutController) {
+            this._dirtyRenderables.nextTick.push(renderable.layout);
+        }
+
         return this;
     };
 
@@ -622,7 +631,7 @@ define(function(require, exports, module) {
      * @param {Spec} [insertSpec] Size, transform, etc.. to start with when inserting
      * @return {LayoutController} this
      */
-    LayoutController.prototype.push = function(renderable, insertSpec) {
+    LayoutController.prototype.push = function (renderable, insertSpec) {
         return this.insert(-1, renderable, insertSpec);
     };
 
@@ -674,7 +683,7 @@ define(function(require, exports, module) {
      * @param {Number|String} indexOrId Index within dataSource array or id (String)
      * @return {Renderable} renderable or `undefined`
      */
-    LayoutController.prototype.get = function(indexOrId) {
+    LayoutController.prototype.get = function (indexOrId) {
         if (this._nodesById || (indexOrId instanceof String) || (typeof indexOrId === 'string')) {
             return this._nodesById ? this._nodesById[indexOrId] : undefined;
         }
@@ -691,7 +700,7 @@ define(function(require, exports, module) {
      * @param {Number} index2 Index of the renderable to swap with
      * @return {LayoutController} this
      */
-    LayoutController.prototype.swap = function(index, index2) {
+    LayoutController.prototype.swap = function (index, index2) {
         this._viewSequence.swap(index, index2);
         this._isDirty = true;
         return this;
@@ -705,7 +714,7 @@ define(function(require, exports, module) {
      * @param {Bool} [noAnimation] When set to `true`, replaces the renderable without any flowing animation.
      * @return {Renderable} old renderable that has been replaced
      */
-    LayoutController.prototype.replace = function(indexOrId, renderable, noAnimation, sequence) {
+    LayoutController.prototype.replace = function (indexOrId, renderable, noAnimation, sequence) {
         var oldRenderable;
         if (this._nodesById || (indexOrId instanceof String) || (typeof indexOrId === 'string')) {
             oldRenderable = this._nodesById[indexOrId];
@@ -721,7 +730,7 @@ define(function(require, exports, module) {
             }
             return oldRenderable;
         }
-        if(!sequence){
+        if (!sequence) {
             sequence = this._viewSequence.findByIndex(indexOrId);
         }
         if (!sequence) {
@@ -752,7 +761,7 @@ define(function(require, exports, module) {
      * @param {Number} newIndex New index of the renderable.
      * @return {LayoutController} this
      */
-    LayoutController.prototype.move = function(index, newIndex) {
+    LayoutController.prototype.move = function (index, newIndex) {
         var sequence = this._viewSequence.findByIndex(index);
         if (!sequence) {
             throw 'Invalid index (' + index + ') specified to .move';
@@ -774,7 +783,7 @@ define(function(require, exports, module) {
      * @param {Spec} [removeSpec] Size, transform, etc.. to end with when removing
      * @return {Renderable} renderable that has been removed
      */
-    LayoutController.prototype.remove = function(indexOrId, removeSpec) {
+    LayoutController.prototype.remove = function (indexOrId, removeSpec) {
         var renderNode;
 
         // Remove the renderable in case of an id (String)
@@ -839,7 +848,7 @@ define(function(require, exports, module) {
      * @param {Spec} [removeSpec] Size, transform, etc.. to end with when removing
      * @return {LayoutController} this
      */
-    LayoutController.prototype.removeAll = function(removeSpec) {
+    LayoutController.prototype.removeAll = function (removeSpec) {
         if (this._nodesById) {
             var dirty = false;
             for (var key in this._nodesById) {
@@ -850,7 +859,7 @@ define(function(require, exports, module) {
                 this._isDirty = true;
             }
         }
-        else if (this._viewSequence){
+        else if (this._viewSequence) {
             this._viewSequence = this._viewSequence.clear();
         }
         if (removeSpec) {
@@ -868,7 +877,7 @@ define(function(require, exports, module) {
      *
      * @return {Array.Number} [width, height]
      */
-    LayoutController.prototype.getSize = function() {
+    LayoutController.prototype.getSize = function () {
         return this._size || this.options.size;
     };
 
@@ -905,12 +914,14 @@ define(function(require, exports, module) {
             this._nodes.removeAll();
         }
 
+        this._isDisplaying = true;
+
         // When the size or layout function has changed, reflow the layout
         if (size[0] !== this._contextSizeCache[0] ||
             size[1] !== this._contextSizeCache[1] ||
             this._isDirty ||
             this._nodes._trueSizeRequested ||
-            this.options.alwaysLayout){
+            this.options.alwaysLayout) {
 
             // Emit start event
             var eventData = {
@@ -1028,13 +1039,13 @@ define(function(require, exports, module) {
         // Add our cleanup-registration id also to the list, so that the
         // cleanup function is called by famo.us when the LayoutController is
         // removed from the render-tree.
-        if (!target.length || (target[target.length-1] !== this._cleanupRegistration)) {
+        if (!target.length || (target[target.length - 1] !== this._cleanupRegistration)) {
             target.push(this._cleanupRegistration);
         }
 
         // Translate dependent on origin
         if (origin && ((origin[0] !== 0) || (origin[1] !== 0))) {
-            transform = Transform.moveThen([-size[0]*origin[0], -size[1]*origin[1], 0], transform);
+            transform = Transform.moveThen([-size[0] * origin[0], -size[1] * origin[1], 0], transform);
         }
         this._commitOutput.size = size;
         this._commitOutput.opacity = opacity;
@@ -1048,10 +1059,20 @@ define(function(require, exports, module) {
      * @private
      * @param {Context} context cleanup context
      */
-    LayoutController.prototype.cleanup = function(context) {
+    LayoutController.prototype.cleanup = function (context) {
         if (this.options.flow) {
             this._resetFlowState = true;
         }
+        this._isDisplaying = false;
+    };
+
+
+    /**
+     * Determine whether the item currently is being rendered by Famous
+     * @returns {boolean} True if being rendered
+     */
+    LayoutController.prototype.isDisplaying = function () {
+        return this._isDisplaying;
     };
 
     /**
@@ -1060,7 +1081,7 @@ define(function(require, exports, module) {
      * @param {Function} handler Function that is called when the given event type is emitted.
      * @param {Object} context Optional: context of 'this' inside the handler function when it is called.
      */
-    LayoutController.prototype.once = function(event, handler, context) {
+    LayoutController.prototype.once = function (event, handler, context) {
         return this.on(event, function onceWrapper() {
             handler.apply(context, arguments);
             this.removeListener(event, onceWrapper);

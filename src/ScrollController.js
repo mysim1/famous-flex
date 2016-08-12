@@ -1226,6 +1226,16 @@ define(function(require, exports, module) {
         return _getVisibleItem.call(this, true);
     };
 
+
+    /**
+     * Forces a new layout the next render cycle, manipulating flow state (in constrast to reflowLayout).
+     *
+     * @return {LayoutController} this
+     */
+    ScrollController.prototype.reLayout = function() {
+        return this._reLayout = true;
+    };
+
     /**
      * Get the last visible item in the view.
      *
@@ -1823,6 +1833,11 @@ define(function(require, exports, module) {
         // When pagination is enabled, snap to page
         _snapToPage.call(this);
 
+        // Normalize scroll offset so that the current viewsequence node is as close to the
+        // top as possible and the layout function will need to process the least amount
+        // of renderables.
+        scrollOffset = _normalizeViewSequence.call(this, size, scrollOffset);
+
         // If the bounds have changed, and the scroll-offset would be different
         // than before, then re-layout entirely using the new offset.
         var newScrollOffset = _calcScrollOffset.call(this, true);
@@ -1831,10 +1846,6 @@ define(function(require, exports, module) {
             return _layout.call(this, size, newScrollOffset, true);
         }
 
-        // Normalize scroll offset so that the current viewsequence node is as close to the
-        // top as possible and the layout function will need to process the least amount
-        // of renderables.
-        scrollOffset = _normalizeViewSequence.call(this, size, scrollOffset);
 
         // Update spring
         _updateSpring.call(this);
@@ -1916,10 +1927,15 @@ define(function(require, exports, module) {
         if (size[0] !== this._contextSizeCache[0] ||
             size[1] !== this._contextSizeCache[1] ||
             this._isDirty ||
+            this._reLayout ||
             this._scroll.scrollDirty ||
             this._nodes._trueSizeRequested ||
             this.options.alwaysLayout ||
             this._scrollOffsetCache !== scrollOffset) {
+
+            if(this._reLayout){
+                this._reLayout = false;
+            }
 
             // Prepare event data
             eventData = {
@@ -1940,9 +1956,47 @@ define(function(require, exports, module) {
             }
             else if (this._scroll.isScrolling && !this._scroll.scrollForceCount) {
                 emitEndScrollingEvent = true;
+
             }
 
             this._eventOutput.emit('layoutstart', eventData);
+
+
+
+
+
+            // Update state
+            this._contextSizeCache[0] = size[0];
+            this._contextSizeCache[1] = size[1];
+
+
+
+            // Perform layout
+            scrollOffset = _layout.call(this, size, scrollOffset);
+            this._scrollOffsetCache = scrollOffset;
+
+            /* Depending on whether an inserted node is in view or not, we might have to enable flowing mode */
+
+            var haveDirtyRenderablesThisTick = false;
+            if(this._dirtyRenderables.thisTick.length){
+                haveDirtyRenderablesThisTick = true;
+                /* If noone of the newly inserted renderables are displaying then we don't need a new flow */
+                if(this._dirtyRenderables.thisTick.every(function(dirtyRenderable){return !dirtyRenderable._isDisplaying})){
+                    this._isDirty = false;
+                } else {
+                    this._isDirty = true;
+                }
+                this._dirtyRenderables.thisTick = [];
+            }
+
+            if(this._dirtyRenderables.nextTick.length){
+                this._dirtyRenderables.thisTick = this._dirtyRenderables.thisTick.concat(this._dirtyRenderables.nextTick);
+                this._dirtyRenderables.nextTick = [];
+                if(!haveDirtyRenderablesThisTick){
+                    this._isDirty = false;
+                    this._reLayout = true
+                }
+            }
 
             // When the layout has changed, and we are not just scrolling,
             // disable the locked state of the layout-nodes so that they
@@ -1958,15 +2012,10 @@ define(function(require, exports, module) {
                 }
             }
 
-            // Update state
-            this._contextSizeCache[0] = size[0];
-            this._contextSizeCache[1] = size[1];
             this._isDirty = false;
             this._scroll.scrollDirty = false;
 
-            // Perform layout
-            scrollOffset = _layout.call(this, size, scrollOffset);
-            this._scrollOffsetCache = scrollOffset;
+
 
             // Emit end event
             eventData.scrollOffset = -(this._scrollOffsetCache + this._scroll.groupStart);
