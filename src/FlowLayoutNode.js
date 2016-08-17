@@ -423,8 +423,8 @@ define(function(require, exports, module) {
                immediate = true; // this is a bit dirty, it should check !_lockDirection for non changes as well before setting immediate to true
             }*/
             // set new end state (the quick way)
-            prop.endState.x = value[0];
-            prop.endState.y = (value.length > 1) ? value[1] : 0;
+            prop.endState.x = value[0] === true ? prop.endState.x : value[0];
+            prop.endState.y = (value.length > 1) ? value[1] === true ? prop.endState.y : value[1] : 0;
             prop.endState.z = (value.length > 2) ? value[2] : 0;
             if (immediate) {
                 // set current state (the quick way)
