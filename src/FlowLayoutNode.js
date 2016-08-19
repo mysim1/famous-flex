@@ -13,7 +13,7 @@
  *
  * @module
  */
-define(function(require, exports, module) {
+define(function (require, exports, module) {
 
     // import dependencies
     var OptionsManager = require('famous/core/OptionsManager');
@@ -24,6 +24,7 @@ define(function(require, exports, module) {
     var PhysicsEngine = require('famous/physics/PhysicsEngine');
     var LayoutNode = require('./LayoutNode');
     var Transitionable = require('famous/transitions/Transitionable');
+    var Easing = require('famous/transitions/Easing');
 
     /**
      * @class
@@ -109,38 +110,10 @@ define(function(require, exports, module) {
         rotate: [0, 0, 0],
         skew: [0, 0, 0]
     };
-
-    /**
-     * Verifies that the integrity of the layout-node is oke.
-     */
-    /*function _verifyIntegrity() {
-        var i;
-        for (var propName in this._properties) {
-            var prop = this._properties[propName];
-            if (prop.particle) {
-                if (isNaN(prop.particle.getEnergy())) {
-                    throw 'invalid particle energy: ' + propName;
-                }
-                var value = prop.particle.getPosition();
-                for (i = 0; i < value.length; i++) {
-                    if (isNaN(value[i])) {
-                       throw 'invalid particle value: ' + propName + '(' + i + ')';
-                    }
-                }
-                value = prop.endState.get();
-                for (i = 0; i < value.length; i++) {
-                    if (isNaN(value[i])) {
-                       throw 'invalid endState value: ' + propName + '(' + i + ')';
-                    }
-                }
-            }
-        }
-    }*/
-
     /**
      * Sets the configuration options
      */
-    FlowLayoutNode.prototype.setOptions = function(options) {
+    FlowLayoutNode.prototype.setOptions = function (options) {
         this._optionsManager.setOptions(options);
         var wasSleeping = this._pe.isSleeping();
         for (var propName in this._properties) {
@@ -170,7 +143,7 @@ define(function(require, exports, module) {
     /**
      * Set the properties from a spec.
      */
-    FlowLayoutNode.prototype.setSpec = function(spec) {
+    FlowLayoutNode.prototype.setSpec = function (spec) {
         this._insertSpec = spec;
     };
 
@@ -178,7 +151,7 @@ define(function(require, exports, module) {
      * Reset the end-state. This function is called on all layout-nodes prior to
      * calling the layout-function. So that the layout-function starts with a clean slate.
      */
-    FlowLayoutNode.prototype.reset = function() {
+    FlowLayoutNode.prototype.reset = function () {
         if (this._invalidated) {
             for (var propName in this._properties) {
                 this._properties[propName].invalidated = false;
@@ -192,7 +165,7 @@ define(function(require, exports, module) {
     /**
      * Markes the node for removal.
      */
-    FlowLayoutNode.prototype.remove = function(removeSpec) {
+    FlowLayoutNode.prototype.remove = function (removeSpec) {
 
         // Transition to the remove-spec state
         this._removing = true;
@@ -213,8 +186,16 @@ define(function(require, exports, module) {
      * E.g., when changing position, resizing, the lock should be released so that
      * the renderables can smoothly transition to their new positions.
      */
-    FlowLayoutNode.prototype.releaseLock = function(enable) {
-        this._releaseLock = {enable:enable};
+    FlowLayoutNode.prototype.releaseLock = function (enable, options, callback) {
+        if(!this._singleTween){
+            if (!options) {
+                options = {
+                    duration: this.options.spring.period || 1000
+                }
+            }
+            this._releaseLock = {enable: enable, options: options, callback: callback};
+        }
+
     };
 
     /**
@@ -234,22 +215,22 @@ define(function(require, exports, module) {
     /**
      * Creates the render-spec
      */
-    FlowLayoutNode.prototype.getSpec = function() {
+    FlowLayoutNode.prototype.getSpec = function () {
 
-        if(this._releaseLock){
-            var enable = this._releaseLock;
+        if (this._releaseLock) {
+            var enable = this._releaseLock.enable;
+            var options = this._releaseLock.options;
+            var callback = this._releaseLock.callback;
             this._lockTransitionable.halt();
             this._lockTransitionable.reset(0);
             if (enable) {
-                this._lockTransitionable.set(1, {
-                    duration: this.options.spring.period || 1000
-                });
+                this._lockTransitionable.set(1, options, callback);
             }
             this._releaseLock = undefined;
         }
 
 
-        if(this._insertSpec){
+        if (this._insertSpec) {
             var insertSpec = this._insertSpec;
             this._insertSpec = undefined;
             var oldExists = this._exists;
@@ -261,13 +242,13 @@ define(function(require, exports, module) {
             this._invalidated = oldInvalidated;
         }
 
-        if(!this._exists){
+        if (!this._exists) {
             this._spec.removed = true;
             return this._spec;
         }
 
         // When the end state was reached, return the previous spec
-        var endStateReached = this._pe.isSleeping();
+        var endStateReached = this._pe.isSleeping() && !this._singleTween;
         if (!this._specModified && endStateReached) {
             this._spec.removed = !this._invalidated;
             return this._spec;
@@ -277,7 +258,7 @@ define(function(require, exports, module) {
         this._spec.removed = false;
 
         // Step physics engine when not sleeping
-        if (!endStateReached) {
+        if (!endStateReached && !this._singleTween) {
             this._pe.step();
         }
 
@@ -419,29 +400,45 @@ define(function(require, exports, module) {
             else if (this._removing) {
                 value = prop.particle.getPosition();
             }
-/*            if (isTranslate && (this._lockTransitionable.get() === 1)) {
-               immediate = true; // this is a bit dirty, it should check !_lockDirection for non changes as well before setting immediate to true
-            }*/
+            /*            if (isTranslate && (this._lockTransitionable.get() === 1)) {
+             immediate = true; // this is a bit dirty, it should check !_lockDirection for non changes as well before setting immediate to true
+             }*/
             // set new end state (the quick way)
-            prop.endState.x = value[0] === true ? prop.endState.x : value[0];
-            prop.endState.y = (value.length > 1) ? value[1] === true ? prop.endState.y : value[1] : 0;
-            prop.endState.z = (value.length > 2) ? value[2] : 0;
-            if (immediate) {
-                // set current state (the quick way)
-                prop.curState.x = prop.endState.x;
-                prop.curState.y = prop.endState.y;
-                prop.curState.z = prop.endState.z;
-                // reset velocity (the quick way)
-                prop.velocity.x = 0;
-                prop.velocity.y = 0;
-                prop.velocity.z = 0;
+            var newPropsAreDifferent = !_approxEqual3d(value, prop.endState);
+            if (this._pe.isSleeping() && !this._singleTween && newPropsAreDifferent && !this._shouldDisableSingleTween) {
+                _assignVectorFromArray(prop.endState, value);
+                this._shouldDoSingleTween = true;
+            } else {
+                if (immediate) {
+                    // set current state (the quick way)
+                    prop.curState.x = prop.endState.x;
+                    prop.curState.y = prop.endState.y;
+                    prop.curState.z = prop.endState.z;
+                    // reset velocity (the quick way)
+                    prop.velocity.x = 0;
+                    prop.velocity.y = 0;
+                    prop.velocity.z = 0;
+                }
+                else if (newPropsAreDifferent) {
+                    if(this._singleTween){
+                        var lockVar = this._lockTransitionable.get();
+                        var velocity = this._lockTransitionable.velocity;
+                        var curve = this._singleTweenProperties.curve;
+                        var duration = this._singleTweenProperties.duration;
+                        var epsilon = 1e-7;
+                        var curveDelta = (curve(lockVar) - curve(lockVar - epsilon)) / epsilon;
+                        ['x','y','z'].forEach(function(dimension) {
+                            var distanceToTravel = (prop.endState[dimension] - prop.curState[dimension]);
+                            var distanceTraveled = distanceToTravel * lockVar;
+                            prop.velocity[dimension] = - 2 * curveDelta * (prop.curState[dimension] - prop.endState[dimension]) / duration;
+                            prop.curState[dimension] = Math.round((prop.curState[dimension] + distanceTraveled));
+                        });
+                        this._shouldDisableSingleTween = true;
+                    }
+                    _assignVectorFromArray(prop.endState, value);
+                    this._pe.wake();
+                }
             }
-            else if ((prop.endState.x !== prop.curState.x) ||
-                     (prop.endState.y !== prop.curState.y) ||
-                     (prop.endState.z !== prop.curState.z)) {
-                this._pe.wake();
-            }
-            return;
         }
         else {
 
@@ -479,9 +476,9 @@ define(function(require, exports, module) {
             }
             else {
                 prop.enabled = [
-                  this.options.properties[propName],
-                  this.options.properties[propName],
-                  this.options.properties[propName]
+                    this.options.properties[propName],
+                    this.options.properties[propName],
+                    this.options.properties[propName]
                 ];
             }
             prop.init = true;
@@ -489,20 +486,34 @@ define(function(require, exports, module) {
         }
     }
 
+
     /**
      * Get value if not equals.
      */
     function _getIfNE2D(a1, a2) {
         return ((a1[0] === a2[0]) && (a1[1] === a2[1])) ? undefined : a1;
     }
+
     function _getIfNE3D(a1, a2) {
         return ((a1[0] === a2[0]) && (a1[1] === a2[1]) && (a1[2] === a2[2])) ? undefined : a1;
     }
 
+    function _approxEqual3d(array, vector) {
+        return ['x', 'y', 'z'].every(function (dimension, index) {
+            return (array.length <= index || array[index] === true || Math.abs(array[index] - vector[dimension]) < 0.01);
+        });
+    }
+    function _assignVectorFromArray(vector, array) {
+        vector.x = array[0] === true ? vector.endState.x : array[0];
+        vector.y = (array.length > 1) ? array[1] === true ? vector.endState.y : array[1] : 0;
+        vector.z = (array.length > 2) ? array[2] : 0;
+    }
+
+
     /**
      * context.set(..)
      */
-    FlowLayoutNode.prototype.set = function(set, defaultSize) {
+    FlowLayoutNode.prototype.set = function (set, defaultSize) {
         /* If an insert spec is specified, we assume removed (non-existing) by default */
         this._exists = true;
 
@@ -516,8 +527,8 @@ define(function(require, exports, module) {
         // opacity
         var prop = this._properties.opacity;
         var value = set.opacity !== undefined ? set.opacity : 1;
-        if(this._insertSpec && this._insertSpec.opacity !== undefined){
-            _setPropertyValue.call(this, prop, 'opacity', [this._insertSpec.opacity*value, 0], DEFAULT.opacity2D);
+        if (this._insertSpec && this._insertSpec.opacity !== undefined) {
+            _setPropertyValue.call(this, prop, 'opacity', [this._insertSpec.opacity * value, 0], DEFAULT.opacity2D);
         }
         _setPropertyValue.call(this, prop, 'opacity', [value, 0], DEFAULT.opacity2D);
 
@@ -525,9 +536,9 @@ define(function(require, exports, module) {
         // set align
         prop = this._properties.align;
         value = set.align ? _getIfNE2D(set.align, DEFAULT.align) : undefined;
-        if(this._insertSpec && this._insertSpec.align){
+        if (this._insertSpec && this._insertSpec.align) {
             var initial = this._insertSpec.align;
-            _setPropertyValue.call(this, prop, 'align',  initial, DEFAULT.align);
+            _setPropertyValue.call(this, prop, 'align', initial, DEFAULT.align);
         }
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'align', value, DEFAULT.align);
@@ -536,9 +547,9 @@ define(function(require, exports, module) {
         // set orgin
         prop = this._properties.origin;
         value = set.origin ? _getIfNE2D(set.origin, DEFAULT.origin) : undefined;
-        if(this._insertSpec && this._insertSpec.origin){
+        if (this._insertSpec && this._insertSpec.origin) {
             var initial = this._insertSpec.origin;
-            _setPropertyValue.call(this, prop, 'origin',  initial, DEFAULT.origin);
+            _setPropertyValue.call(this, prop, 'origin', initial, DEFAULT.origin);
         }
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'origin', value, DEFAULT.origin);
@@ -547,10 +558,10 @@ define(function(require, exports, module) {
         // set size
         // TODO: This doesn't seem to work for some reason
         var hasInsertSize = false;
-        if(this._insertSpec && this._insertSpec.size){
+        if (this._insertSpec && this._insertSpec.size) {
             hasInsertSize = true;
             var initial = this._insertSpec.size;
-            _setPropertyValue.call(this, prop, 'size',  initial, defaultSize);
+            _setPropertyValue.call(this, prop, 'size', initial, defaultSize);
         }
         prop = this._properties.size;
         value = set.size || defaultSize;
@@ -562,9 +573,11 @@ define(function(require, exports, module) {
         prop = this._properties.translate;
         value = set.translate;
         if (value || (prop && prop.init)) {
-            if(this._insertSpec && this._insertSpec.translate){
+            if (this._insertSpec && this._insertSpec.translate) {
                 var initial = this._insertSpec.translate;
-                _setPropertyValue.call(this, prop, 'translate', [0,1,2].map(function(index){return initial[index] + value[index]}), DEFAULT.translate, undefined, true);
+                _setPropertyValue.call(this, prop, 'translate', [0, 1, 2].map(function (index) {
+                    return initial[index] + value[index]
+                }), DEFAULT.translate, undefined, true);
             }
             _setPropertyValue.call(this, prop, 'translate', value, DEFAULT.translate, undefined, true);
         }
@@ -572,7 +585,7 @@ define(function(require, exports, module) {
         // set scale
         prop = this._properties.scale;
         value = set.scale ? _getIfNE3D(set.scale, DEFAULT.scale) : undefined;
-        if(this._insertSpec && this._insertSpec.scale){
+        if (this._insertSpec && this._insertSpec.scale) {
             var initial = this._insertSpec.scale;
             _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale);
         }
@@ -583,11 +596,10 @@ define(function(require, exports, module) {
         }
 
 
-
         // set rotate
         prop = this._properties.rotate;
         value = set.rotate ? _getIfNE3D(set.rotate, DEFAULT.rotate) : undefined;
-        if(this._insertSpec && this._insertSpec.rotate){
+        if (this._insertSpec && this._insertSpec.rotate) {
             var initial = this._insertSpec.rotate;
             _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate);
         }
@@ -598,13 +610,38 @@ define(function(require, exports, module) {
         // set skew
         prop = this._properties.skew;
         value = set.skew ? _getIfNE3D(set.skew, DEFAULT.skew) : undefined;
-        if(this._insertSpec && this._insertSpec.skew){
+        if (this._insertSpec && this._insertSpec.skew) {
             var initial = this._insertSpec.skew;
             _setPropertyValue.call(this, prop, 'skew', initial, DEFAULT.skew);
         }
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew);
         }
+        if(this._shouldDoSingleTween){
+            /* Reset variable */
+            this._shouldDoSingleTween = false;
+            this._singleTweenProperties  = {curve: Easing.inOutBounce, duration: 1000};
+            this.releaseLock(true, this._singleTweenProperties, function() {
+                if(this._singleTween){
+                    this._singleTween = false;
+                    for(var propName in this._properties){
+                        var prop = this._properties[propName];
+                        if(prop && prop.init){
+                            prop.curState.x = prop.endState.x;
+                            prop.curState.y = prop.endState.y;
+                            prop.curState.z = prop.endState.z;
+                        }
+                    }
+                }
+
+            }.bind(this));
+            this._singleTween = true;
+        } else if(this._shouldDisableSingleTween){
+            this._singleTween = false;
+            this._shouldDisableSingleTween = false;
+            this.releaseLock();
+        }
+
         this._insertSpec = undefined;
     };
 

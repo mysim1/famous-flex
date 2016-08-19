@@ -1014,9 +1014,9 @@ define(function (require, exports, module) {
             this._eventOutput.emit('reflow', {
                 target: this
             });
+            this._lastResultUntouched = false;
         }
-        else if (this.options.flow) {
-
+        else if (this.options.flow && !this._lastResultUntouched) {
             // Update output and optionally emit event
             result = this._nodes.buildSpecAndDestroyUnrenderedNodes();
             this._specs = result.specs;
@@ -1026,6 +1026,7 @@ define(function (require, exports, module) {
                     target: this
                 });
             }
+            this._lastResultUntouched = !result.modified;
         }
 
         // Render child-nodes every commit
