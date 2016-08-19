@@ -405,6 +405,7 @@ define(function (require, exports, module) {
              }*/
             // set new end state (the quick way)
             var newPropsAreDifferent = !_approxEqual3d(value, prop.endState);
+            // If we reached an end state and we shouldn't go to another state. TODO: Don't go into this if clause if there is no curve defined
             if (this._pe.isSleeping() && !this._singleTween && newPropsAreDifferent && !this._shouldDisableSingleTween) {
                 _assignVectorFromArray(prop.endState, value);
                 this._shouldDoSingleTween = true;
@@ -422,6 +423,7 @@ define(function (require, exports, module) {
                 else if (newPropsAreDifferent) {
                     if(this._singleTween){
                         var lockVar = this._lockTransitionable.get();
+                        //Complex code for calculating the velocity of the current ongoing animation
                         var velocity = this._lockTransitionable.velocity;
                         var curve = this._singleTweenProperties.curve;
                         var duration = this._singleTweenProperties.duration;
@@ -620,8 +622,10 @@ define(function (require, exports, module) {
         if(this._shouldDoSingleTween){
             /* Reset variable */
             this._shouldDoSingleTween = false;
+            //TODO: Replace hardcoded curve and duration with soft coded
             this._singleTweenProperties  = {curve: Easing.inOutBounce, duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
+                //TODO: Fire an event maybe
                 if(this._singleTween){
                     this._singleTween = false;
                     for(var propName in this._properties){
@@ -641,6 +645,7 @@ define(function (require, exports, module) {
             this._shouldDisableSingleTween = false;
             this.releaseLock();
         }
+
 
         this._insertSpec = undefined;
     };

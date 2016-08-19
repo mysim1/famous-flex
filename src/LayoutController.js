@@ -118,6 +118,7 @@ define(function (require, exports, module) {
         if (nodeManager) {
             this._nodes = nodeManager;
         }
+            //TODO: Make some solution that does flow not just on the view but on the renderables
         else if (options && options.flow) {
             this._nodes = new LayoutNodeManager(FlowLayoutNode, _initFlowLayoutNode.bind(this));
         }
