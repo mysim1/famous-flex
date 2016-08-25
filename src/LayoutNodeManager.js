@@ -29,6 +29,8 @@ define(function(require, exports, module) {
     var LayoutUtility = require('./LayoutUtility');
     var Surface = require('famous/core/Surface');
     var RenderNode = require('famous/core/RenderNode');
+    var FlowLayoutNode = require('./FlowLayoutNode.js');
+    var LayoutNode = require('./LayoutNode.js');
 
     var MAX_POOL_SIZE = 100;
 
@@ -38,8 +40,9 @@ define(function(require, exports, module) {
      * @param {Function} initLayoutNodeFn function to use when initializing new nodes
      * @alias module:LayoutNodeManager
      */
-    function LayoutNodeManager(LayoutNode, initLayoutNodeFn) {
+    function LayoutNodeManager(LayoutNode, initLayoutNodeFn, flow = false) {
         this.LayoutNode = LayoutNode;
+        this._flow = flow;
         this._initLayoutNodeFn = initLayoutNodeFn;
         this._layoutCount = 0;
         this._context = new LayoutContext({
@@ -291,6 +294,7 @@ define(function(require, exports, module) {
      */
     LayoutNodeManager.prototype.createNode = function(renderNode, spec) {
         var node;
+        console.log(`createNode ${renderNode} ${spec}`);
         if (this._pool.layoutNodes.first) {
             node = this._pool.layoutNodes.first;
             this._pool.layoutNodes.first = node._next;
@@ -298,7 +302,14 @@ define(function(require, exports, module) {
             node.constructor.apply(node, arguments);
         }
         else {
-            node = new this.LayoutNode(renderNode, spec);
+            if(this._flow || renderNode.decorations && renderNode.decorations.useFlow){
+                console.log('creating FlowLayoutNode');
+                node = new FlowLayoutNode(renderNode, spec);
+            } else {
+                console.log('creating LayoutNode');
+                node = new LayoutNode(renderNode, spec);
+            }
+
             if (this._nodeOptions) {
                 node.setOptions(this._nodeOptions);
             }

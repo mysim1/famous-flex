@@ -120,10 +120,10 @@ define(function (require, exports, module) {
         }
             //TODO: Make some solution that does flow not just on the view but on the renderables
         else if (options && options.flow) {
-            this._nodes = new LayoutNodeManager(FlowLayoutNode, _initFlowLayoutNode.bind(this));
+            this._nodes = new LayoutNodeManager(FlowLayoutNode, _initFlowLayoutNode.bind(this), options.flow);
         }
         else {
-            this._nodes = new LayoutNodeManager(LayoutNode);
+            this._nodes = new LayoutNodeManager(LayoutNode, null, options.flow);
         }
 
         // Set options
@@ -309,6 +309,12 @@ define(function (require, exports, module) {
             this._viewSequence = dataSource;
         }
         else if (dataSource instanceof Object) {
+            for(let renderableName in dataSource){
+                let renderable = dataSource[renderableName];
+                if(renderable.decorations && renderable.decorations.useFlow){
+                    this.options.flow = true;
+                }
+            }
             this._nodesById = dataSource;
         }
         if (this.options.autoPipeEvents) {
@@ -951,7 +957,7 @@ define(function (require, exports, module) {
                 }
                 if (lock !== undefined) {
                     var node = this._nodes.getStartEnumNode();
-                    while (node) {
+                    while (node && node.releaseLock) {
                         node.releaseLock(lock);
                         node = node._next;
                     }

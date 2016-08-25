@@ -35,6 +35,7 @@ define(function (require, exports, module) {
      * @alias module:FlowLayoutNode
      */
     function FlowLayoutNode(renderNode, spec) {
+
         LayoutNode.apply(this, arguments);
 
         /* Recreating the objects because constructor can be called twice */
@@ -216,7 +217,6 @@ define(function (require, exports, module) {
      * Creates the render-spec
      */
     FlowLayoutNode.prototype.getSpec = function () {
-
         if (this._releaseLock) {
             var enable = this._releaseLock.enable;
             var options = this._releaseLock.options;
@@ -622,10 +622,10 @@ define(function (require, exports, module) {
         if(this._shouldDoSingleTween){
             /* Reset variable */
             this._shouldDoSingleTween = false;
-            //TODO: Replace hardcoded curve and duration with soft coded
-            this._singleTweenProperties  = {curve: Easing.inOutBounce, duration: 1000};
+            this._singleTweenProperties = set.curve || {curve: Easing.outCubic, duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
                 //TODO: Fire an event maybe
+                console.log('animation done');
                 if(this._singleTween){
                     this._singleTween = false;
                     for(var propName in this._properties){
