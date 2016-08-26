@@ -619,14 +619,17 @@ define(function (require, exports, module) {
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew);
         }
+
+
         if(this._shouldDoSingleTween){
             /* Reset variable */
             this._shouldDoSingleTween = false;
-            this._singleTweenProperties = set.curve || {curve: Easing.outCubic, duration: 1000};
+            this._singleTweenProperties = set.curve || {curve: 'linear', duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
-                //TODO: Fire an event maybe
-                console.log('animation done');
                 if(this._singleTween){
+                    let emit = (this.renderNode.emit || this.renderNode._eventOutput.emit).bind(this.renderNode);
+                    emit.bind(this.renderNode);
+                    emit('flowDone');
                     this._singleTween = false;
                     for(var propName in this._properties){
                         var prop = this._properties[propName];
@@ -644,6 +647,8 @@ define(function (require, exports, module) {
             this._singleTween = false;
             this._shouldDisableSingleTween = false;
             this.releaseLock();
+            let emit = (this.renderNode.emit || this.renderNode._eventOutput.emit).bind(this.renderNode);
+            emit('flowInterjected');
         }
 
 
