@@ -310,9 +310,6 @@ define(function (require, exports, module) {
             this._viewSequence = dataSource;
         }
         else if (dataSource instanceof Object) {
-            for(let renderableName in dataSource){
-                let renderable = dataSource[renderableName];
-            }
             this._nodesById = dataSource;
         }
         if (this.options.autoPipeEvents) {
