@@ -207,12 +207,11 @@ define(function (require, exports, module) {
         if (!prop || !prop.init) {
             return def;
         }
-        let x = [
+         return [
             prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / precision) * precision) : prop.endState.x,
             prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / precision) * precision) : prop.endState.y,
             prop.enabled[2] ? (Math.round((prop.curState.z + ((prop.endState.z - prop.curState.z) * lockValue)) / precision) * precision) : prop.endState.z
         ];
-        return x;
     }
 
     /**
@@ -273,7 +272,8 @@ define(function (require, exports, module) {
         // opacity
         var prop = this._properties.opacity;
         if (prop && prop.init) {
-            spec.opacity = prop.enabled[0] ? (Math.round(Math.max(0, Math.min(1, prop.curState.x)) / precision) * precision) : prop.endState.x;
+            // spec.opacity = prop.enabled[0] ? (Math.round(Math.max(0, Math.min(1, prop.curState.x)) / precision) * precision) : prop.endState.x;
+            spec.opacity = prop.enabled[0] ? Math.max(0,Math.min(1,(Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / precision) * precision))) : prop.endState.x;
             spec.endState.opacity = prop.endState.x;
         }
         else {
@@ -388,7 +388,7 @@ define(function (require, exports, module) {
     /**
      * Helper function to set the property of a node (e.g. opacity, translate, etc..)
      */
-    function _setPropertyValue(prop, propName, endState, defaultValue, immediate, isTranslate) {
+    function _setPropertyValue(prop, propName, endState, defaultValue, immediate) {
 
         // Get property
         prop = prop || this._properties[propName];
