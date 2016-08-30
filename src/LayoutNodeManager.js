@@ -38,11 +38,12 @@ define(function(require, exports, module) {
      * @class
      * @param {LayoutNode} LayoutNode Layout-nodes to create
      * @param {Function} initLayoutNodeFn function to use when initializing new nodes
+     * @param {Boolean} partialFlow Sets
      * @alias module:LayoutNodeManager
      */
-    function LayoutNodeManager(LayoutNode, initLayoutNodeFn, flow = false) {
+    function LayoutNodeManager(LayoutNode, initLayoutNodeFn, partialFlow) {
         this.LayoutNode = LayoutNode;
-        this._flow = flow;
+        this._partialFlow = partialFlow || false;
         this._initLayoutNodeFn = initLayoutNodeFn;
         this._layoutCount = 0;
         this._context = new LayoutContext({
@@ -294,7 +295,6 @@ define(function(require, exports, module) {
      */
     LayoutNodeManager.prototype.createNode = function(renderNode, spec) {
         var node;
-        console.log(`createNode ${renderNode} ${spec}`);
         if (this._pool.layoutNodes.first) {
             node = this._pool.layoutNodes.first;
             this._pool.layoutNodes.first = node._next;
@@ -302,12 +302,14 @@ define(function(require, exports, module) {
             node.constructor.apply(node, arguments);
         }
         else {
-            if(this._flow || renderNode.decorations && renderNode.decorations.useFlow){
-                console.log('creating FlowLayoutNode');
-                node = new FlowLayoutNode(renderNode, spec);
+            if(this._partialFlow){
+                if(renderNode.isFlowy){
+                    node = new FlowLayoutNode(renderNode, spec);
+                } else {
+                    node = new LayoutNode(renderNode, spec);
+                }
             } else {
-                console.log('creating LayoutNode');
-                node = new LayoutNode(renderNode, spec);
+                node = new this.LayoutNode(renderNode, spec);
             }
 
             if (this._nodeOptions) {

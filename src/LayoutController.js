@@ -120,10 +120,10 @@ define(function (require, exports, module) {
         }
             //TODO: Make some solution that does flow not just on the view but on the renderables
         else if (options && options.flow) {
-            this._nodes = new LayoutNodeManager(FlowLayoutNode, _initFlowLayoutNode.bind(this), options.flow);
+            this._nodes = new LayoutNodeManager(FlowLayoutNode, _initFlowLayoutNode.bind(this), options.partialFlow);
         }
         else {
-            this._nodes = new LayoutNodeManager(LayoutNode, null, options.flow);
+            this._nodes = new LayoutNodeManager(LayoutNode, null, false);
         }
 
         // Set options
@@ -135,6 +135,7 @@ define(function (require, exports, module) {
 
     LayoutController.DEFAULT_OPTIONS = {
         flow: false,
+        partialFlow: false,
         flowOptions: {
             reflowOnResize: true,
             properties: {
@@ -311,9 +312,6 @@ define(function (require, exports, module) {
         else if (dataSource instanceof Object) {
             for(let renderableName in dataSource){
                 let renderable = dataSource[renderableName];
-                if(renderable.decorations && renderable.decorations.useFlow){
-                    this.options.flow = true;
-                }
             }
             this._nodesById = dataSource;
         }

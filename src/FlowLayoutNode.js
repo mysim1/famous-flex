@@ -596,9 +596,7 @@ define(function (require, exports, module) {
             var initial = this._insertSpec.scale;
             _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale);
         }
-        if (value || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale);
-        } else {
+        if (value !== undefined || (prop && prop.init)){
             value = DEFAULT.scale;
             _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale);
         }
@@ -612,7 +610,7 @@ define(function (require, exports, module) {
             _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate);
         }
 
-        if(value){
+        if(value !== undefined || (prop && prop.init)){
             _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate);
         }
 
@@ -623,7 +621,8 @@ define(function (require, exports, module) {
         if (this._insertSpec && this._insertSpec.skew) {
             var initial = this._insertSpec.skew;
             _setPropertyValue.call(this, prop, 'skew', initial, DEFAULT.skew);
-        } else {
+        }
+        if(value !== undefined || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew);
         }
 
