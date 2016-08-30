@@ -628,8 +628,7 @@ define(function (require, exports, module) {
             this.releaseLock(true, this._singleTweenProperties, function() {
                 if(this._singleTween){
                     let emit = (this.renderNode.emit || this.renderNode._eventOutput.emit).bind(this.renderNode);
-                    emit.bind(this.renderNode);
-                    emit('flowDone');
+                    emit('flowEnd');
                     this._singleTween = false;
                     for(var propName in this._properties){
                         var prop = this._properties[propName];
@@ -648,7 +647,7 @@ define(function (require, exports, module) {
             this._shouldDisableSingleTween = false;
             this.releaseLock();
             let emit = (this.renderNode.emit || this.renderNode._eventOutput.emit).bind(this.renderNode);
-            emit('flowInterjected');
+            emit('flowInterrupted');
         }
 
 
