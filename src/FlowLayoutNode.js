@@ -425,6 +425,7 @@ define(function (require, exports, module) {
                     prop.velocity.z = 0;
                 }
                 else if (newPropsAreDifferent) {
+                    this._shouldDoSingleTween = false;
                     if(this._singleTween){
                         var lockVar = this._lockTransitionable.get();
                         //Complex code for calculating the velocity of the current ongoing animation
@@ -447,6 +448,7 @@ define(function (require, exports, module) {
             }
         }
         else {
+            this._shouldDoSingleTween = true;
             // Create property if neccesary
             var wasSleeping = this._pe.isSleeping();
             if (!prop) {
@@ -608,7 +610,9 @@ define(function (require, exports, module) {
         if (this._insertSpec && this._insertSpec.rotate) {
             var initial = this._insertSpec.rotate;
             _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate);
-        } else {
+        }
+
+        if(value){
             _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate);
         }
 
@@ -626,12 +630,10 @@ define(function (require, exports, module) {
         if(this._shouldDoSingleTween){
             /* Reset variable */
             this._shouldDoSingleTween = false;
-            this._singleTweenProperties = set.curve || {curve: 'linear', duration: 1000};
+            this._singleTweenProperties = set.curve || {curve: function linear(x){return x;}, duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
                 if(this._singleTween){
-                    let emit = (this.renderNode.emit || this.renderNode._eventOutput.emit).bind(this.renderNode);
-                    emit.bind(this.renderNode);
-                    emit('flowDone');
+                    emitIfPossible(this.renderNode, 'flowDone');
                     this._singleTween = false;
                     for(var propName in this._properties){
                         var prop = this._properties[propName];
@@ -649,12 +651,18 @@ define(function (require, exports, module) {
             this._singleTween = false;
             this._shouldDisableSingleTween = false;
             this.releaseLock();
-            let emit = (this.renderNode.emit || this.renderNode._eventOutput.emit).bind(this.renderNode);
-            emit('flowInterjected');
+            emitIfPossible(this.renderNode, 'flowIntercepted');
         }
 
         this._insertSpec = undefined;
     };
+
+    function emitIfPossible(renderNode, eventName){
+        var emitter = renderNode.emit ? renderNode : renderNode._eventOutput;
+        if(emitter){
+            emitter.emit.call(emitter,eventName);
+        }
+    }
 
     module.exports = FlowLayoutNode;
 });
