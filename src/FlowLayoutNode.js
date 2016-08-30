@@ -632,7 +632,7 @@ define(function (require, exports, module) {
             this._singleTweenProperties = set.curve || {curve: function linear(x){return x;}, duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
                 if(this._singleTween){
-                    emitIfPossible(this.renderNode, 'flowDone');
+                    emitIfPossible(this.renderNode, 'flowEnd');
                     this._singleTween = false;
                     for(var propName in this._properties){
                         var prop = this._properties[propName];
@@ -650,7 +650,7 @@ define(function (require, exports, module) {
             this._singleTween = false;
             this._shouldDisableSingleTween = false;
             this.releaseLock();
-            emitIfPossible(this.renderNode, 'flowIntercepted');
+            emitIfPossible(this.renderNode, 'flowInterrupted');
         }
 
         this._insertSpec = undefined;
