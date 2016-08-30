@@ -188,6 +188,7 @@ define(function (require, exports, module) {
      * the renderables can smoothly transition to their new positions.
      */
     FlowLayoutNode.prototype.releaseLock = function (enable, options, callback) {
+        enable = true;
         if(!this._singleTween){
             if (!options) {
                 options = {
@@ -206,17 +207,19 @@ define(function (require, exports, module) {
         if (!prop || !prop.init) {
             return def;
         }
-        return [
+        let x = [
             prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / precision) * precision) : prop.endState.x,
             prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / precision) * precision) : prop.endState.y,
             prop.enabled[2] ? (Math.round((prop.curState.z + ((prop.endState.z - prop.curState.z) * lockValue)) / precision) * precision) : prop.endState.z
         ];
+        return x;
     }
 
     /**
      * Creates the render-spec
      */
     FlowLayoutNode.prototype.getSpec = function () {
+
         if (this._releaseLock) {
             var enable = this._releaseLock.enable;
             var options = this._releaseLock.options;
@@ -405,6 +408,7 @@ define(function (require, exports, module) {
              }*/
             // set new end state (the quick way)
             var newPropsAreDifferent = !_approxEqual3d(value, prop.endState);
+
             // If we reached an end state and we shouldn't go to another state. TODO: Don't go into this if clause if there is no curve defined
             if (this._pe.isSleeping() && !this._singleTween && newPropsAreDifferent && !this._shouldDisableSingleTween) {
                 _assignVectorFromArray(prop.endState, value);
@@ -443,7 +447,6 @@ define(function (require, exports, module) {
             }
         }
         else {
-
             // Create property if neccesary
             var wasSleeping = this._pe.isSleeping();
             if (!prop) {
@@ -595,6 +598,7 @@ define(function (require, exports, module) {
             _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale);
         } else {
             value = DEFAULT.scale;
+            _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale);
         }
 
 
@@ -604,10 +608,10 @@ define(function (require, exports, module) {
         if (this._insertSpec && this._insertSpec.rotate) {
             var initial = this._insertSpec.rotate;
             _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate);
-        }
-        if (value || (prop && prop.init)) {
+        } else {
             _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate);
         }
+
 
         // set skew
         prop = this._properties.skew;
@@ -615,11 +619,9 @@ define(function (require, exports, module) {
         if (this._insertSpec && this._insertSpec.skew) {
             var initial = this._insertSpec.skew;
             _setPropertyValue.call(this, prop, 'skew', initial, DEFAULT.skew);
-        }
-        if (value || (prop && prop.init)) {
+        } else {
             _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew);
         }
-
 
         if(this._shouldDoSingleTween){
             /* Reset variable */
@@ -649,7 +651,6 @@ define(function (require, exports, module) {
             let emit = (this.renderNode.emit || this.renderNode._eventOutput.emit).bind(this.renderNode);
             emit('flowInterrupted');
         }
-
 
         this._insertSpec = undefined;
     };
