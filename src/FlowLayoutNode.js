@@ -300,8 +300,8 @@ define(function (require, exports, module) {
         prop = this._properties.align;
         if (prop && prop.init) {
             spec.align = spec.align || [0, 0];
-            spec.align[0] = prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / 0.1) * 0.1) : prop.endState.x;
-            spec.align[1] = prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / 0.1) * 0.1) : prop.endState.y;
+            spec.align[0] = prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / 0.0001) * 0.0001) : prop.endState.x;
+            spec.align[1] = prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / 0.0001) * 0.0001) : prop.endState.y;
             spec.endState.align = spec.endState.align || [0, 0];
             spec.endState.align[0] = prop.endState.x;
             spec.endState.align[1] = prop.endState.y;
@@ -315,8 +315,8 @@ define(function (require, exports, module) {
         prop = this._properties.origin;
         if (prop && prop.init) {
             spec.origin = spec.origin || [0, 0];
-            spec.origin[0] = prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / 0.1) * 0.1) : prop.endState.x;
-            spec.origin[1] = prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / 0.1) * 0.1) : prop.endState.y;
+            spec.origin[0] = prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / 0.0001) * 0.0001) : prop.endState.x;
+            spec.origin[1] = prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / 0.0001) * 0.0001) : prop.endState.y;
             spec.endState.origin = spec.endState.origin || [0, 0];
             spec.endState.origin[0] = prop.endState.x;
             spec.endState.origin[1] = prop.endState.y;
@@ -437,8 +437,8 @@ define(function (require, exports, module) {
                         ['x','y','z'].forEach(function(dimension) {
                             var distanceToTravel = (prop.endState[dimension] - prop.curState[dimension]);
                             var distanceTraveled = distanceToTravel * lockVar;
-                            prop.velocity[dimension] = - 2 * curveDelta * (prop.curState[dimension] - prop.endState[dimension]) / duration;
-                            prop.curState[dimension] = Math.round((prop.curState[dimension] + distanceTraveled));
+                            prop.velocity[dimension] = - 1 * curveDelta * (prop.curState[dimension] - prop.endState[dimension]) / duration;
+                            prop.curState[dimension] = (prop.curState[dimension] + distanceTraveled);
                         });
                         this._shouldDisableSingleTween = true;
                     }
@@ -629,7 +629,7 @@ define(function (require, exports, module) {
         if(this._shouldDoSingleTween){
             /* Reset variable */
             this._shouldDoSingleTween = false;
-            this._singleTweenProperties = set.curve || {curve: function linear(x){return x;}, duration: 1000};
+            this._singleTweenProperties = {curve: (set.curve && set.curve.curve) || set.curve || function linear(x){return x;}, duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
                 if(this._singleTween){
                     emitIfPossible(this.renderNode, 'flowEnd');
