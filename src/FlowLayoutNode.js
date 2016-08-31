@@ -627,9 +627,10 @@ define(function (require, exports, module) {
         }
 
         if(this._shouldDoSingleTween){
+            let givenTransformation = typeof set.curve === 'function' ? {...set} : set.curve;
             /* Reset variable */
             this._shouldDoSingleTween = false;
-            this._singleTweenProperties = {curve: (set.curve && set.curve.curve) || set.curve || function linear(x){return x;}, duration: 1000};
+            this._singleTweenProperties = givenTransformation || {curve: function linear(x){ return x; }, duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
                 if(this._singleTween){
                     emitIfPossible(this.renderNode, 'flowEnd');
