@@ -47,6 +47,9 @@ define(function (require, exports, module) {
 
         if (!this._pe) {
             this._pe = new PhysicsEngine();
+            this._pe.on('end', function() {
+                emitIfPossible(this.renderNode, 'flowEnd');
+            }.bind(this));
             this._pe.sleep();
         }
 
