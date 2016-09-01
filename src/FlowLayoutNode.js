@@ -600,7 +600,6 @@ define(function (require, exports, module) {
             _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale);
         }
         if (value !== undefined || (prop && prop.init)){
-            value = DEFAULT.scale;
             _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale);
         }
 
@@ -630,7 +629,7 @@ define(function (require, exports, module) {
         }
 
         if(this._shouldDoSingleTween){
-            let givenTransformation = typeof set.curve === 'function' ? {...set} : set.curve;
+            let givenTransformation = set.curve;
             /* Reset variable */
             this._shouldDoSingleTween = false;
             this._singleTweenProperties = givenTransformation || {curve: function linear(x){ return x; }, duration: 1000};
