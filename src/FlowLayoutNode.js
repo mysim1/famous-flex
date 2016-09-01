@@ -191,7 +191,6 @@ define(function (require, exports, module) {
      * the renderables can smoothly transition to their new positions.
      */
     FlowLayoutNode.prototype.releaseLock = function (enable, options, callback) {
-        enable = true;
         if(!this._singleTween){
             if (!options) {
                 options = {
