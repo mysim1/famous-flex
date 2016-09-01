@@ -48,7 +48,9 @@ define(function (require, exports, module) {
         if (!this._pe) {
             this._pe = new PhysicsEngine();
             this._pe.on('end', function() {
-                emitIfPossible(this.renderNode, 'flowEnd');
+                if(!this._shouldDoSingleTween){
+                    emitIfPossible(this.renderNode, 'flowEnd');
+                }
             }.bind(this));
             this._pe.sleep();
         }
@@ -390,7 +392,7 @@ define(function (require, exports, module) {
     /**
      * Helper function to set the property of a node (e.g. opacity, translate, etc..)
      */
-    function _setPropertyValue(prop, propName, endState, defaultValue, immediate) {
+    function _setPropertyValue(prop, propName, endState, defaultValue, immediate, transition) {
 
         // Get property
         prop = prop || this._properties[propName];
@@ -405,14 +407,11 @@ define(function (require, exports, module) {
             else if (this._removing) {
                 value = prop.particle.getPosition();
             }
-            /*            if (isTranslate && (this._lockTransitionable.get() === 1)) {
-             immediate = true; // this is a bit dirty, it should check !_lockDirection for non changes as well before setting immediate to true
-             }*/
             // set new end state (the quick way)
             var newPropsAreDifferent = !_approxEqual3d(value, prop.endState);
 
-            // If we reached an end state and we shouldn't go to another state. TODO: Don't go into this if clause if there is no curve defined
-            if (this._pe.isSleeping() && !this._singleTween && newPropsAreDifferent && !this._shouldDisableSingleTween) {
+            // If we reached an end state and we shouldn't go to another state
+            if (this._pe.isSleeping() && !this._singleTween && newPropsAreDifferent && !this._shouldDisableSingleTween && transition) {
                 _assignVectorFromArray(prop.endState, value);
                 this._shouldDoSingleTween = true;
             } else {
@@ -450,7 +449,8 @@ define(function (require, exports, module) {
             }
         }
         else {
-            this._shouldDoSingleTween = true;
+            /* Only do single tween if there's a transition specified */
+            this._shouldDoSingleTween = !!transition;
             // Create property if neccesary
             var wasSleeping = this._pe.isSleeping();
             if (!prop) {
@@ -537,9 +537,9 @@ define(function (require, exports, module) {
         var prop = this._properties.opacity;
         var value = set.opacity !== undefined ? set.opacity : 1;
         if (this._insertSpec && this._insertSpec.opacity !== undefined) {
-            _setPropertyValue.call(this, prop, 'opacity', [this._insertSpec.opacity * value, 0], DEFAULT.opacity2D);
+            _setPropertyValue.call(this, prop, 'opacity', [this._insertSpec.opacity * value, 0], DEFAULT.opacity2D, set.transition);
         }
-        _setPropertyValue.call(this, prop, 'opacity', [value, 0], DEFAULT.opacity2D);
+        _setPropertyValue.call(this, prop, 'opacity', [value, 0], DEFAULT.opacity2D, set.transition);
 
 
         // set align
@@ -547,10 +547,10 @@ define(function (require, exports, module) {
         value = set.align ? _getIfNE2D(set.align, DEFAULT.align) : undefined;
         if (this._insertSpec && this._insertSpec.align) {
             var initial = this._insertSpec.align;
-            _setPropertyValue.call(this, prop, 'align', initial, DEFAULT.align);
+            _setPropertyValue.call(this, prop, 'align', initial, DEFAULT.align, set.transition);
         }
         if (value || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'align', value, DEFAULT.align);
+            _setPropertyValue.call(this, prop, 'align', value, DEFAULT.align, set.transition);
         }
 
         // set orgin
@@ -558,10 +558,10 @@ define(function (require, exports, module) {
         value = set.origin ? _getIfNE2D(set.origin, DEFAULT.origin) : undefined;
         if (this._insertSpec && this._insertSpec.origin) {
             var initial = this._insertSpec.origin;
-            _setPropertyValue.call(this, prop, 'origin', initial, DEFAULT.origin);
+            _setPropertyValue.call(this, prop, 'origin', initial, DEFAULT.origin, set.transition);
         }
         if (value || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'origin', value, DEFAULT.origin);
+            _setPropertyValue.call(this, prop, 'origin', value, DEFAULT.origin, set.transition);
         }
 
         // set size
@@ -570,12 +570,12 @@ define(function (require, exports, module) {
         if (this._insertSpec && this._insertSpec.size) {
             hasInsertSize = true;
             var initial = this._insertSpec.size;
-            _setPropertyValue.call(this, prop, 'size', initial, defaultSize);
+            _setPropertyValue.call(this, prop, 'size', initial, defaultSize, set.transition);
         }
         prop = this._properties.size;
         value = set.size || defaultSize;
         if (value || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'size', value, defaultSize, this.usesTrueSize && !hasInsertSize);
+            _setPropertyValue.call(this, prop, 'size', value, defaultSize, set.transition);
         }
 
         // set translate
@@ -588,7 +588,7 @@ define(function (require, exports, module) {
                     return initial[index] + value[index]
                 }), DEFAULT.translate, undefined, true);
             }
-            _setPropertyValue.call(this, prop, 'translate', value, DEFAULT.translate, undefined, true);
+            _setPropertyValue.call(this, prop, 'translate', value, DEFAULT.translate, undefined, set.transition);
         }
 
         // set scale
@@ -596,10 +596,10 @@ define(function (require, exports, module) {
         value = set.scale ? _getIfNE3D(set.scale, DEFAULT.scale) : undefined;
         if (this._insertSpec && this._insertSpec.scale) {
             var initial = this._insertSpec.scale;
-            _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale);
+            _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale, set.transition);
         }
         if (value !== undefined || (prop && prop.init)){
-            _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale);
+            _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale, set.transition);
         }
 
 
@@ -608,11 +608,11 @@ define(function (require, exports, module) {
         value = set.rotate ? _getIfNE3D(set.rotate, DEFAULT.rotate) : undefined;
         if (this._insertSpec && this._insertSpec.rotate) {
             var initial = this._insertSpec.rotate;
-            _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate);
+            _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate, set.transition);
         }
 
         if(value !== undefined || (prop && prop.init)){
-            _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate);
+            _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate, set.transition);
         }
 
 
@@ -621,14 +621,14 @@ define(function (require, exports, module) {
         value = set.skew ? _getIfNE3D(set.skew, DEFAULT.skew) : undefined;
         if (this._insertSpec && this._insertSpec.skew) {
             var initial = this._insertSpec.skew;
-            _setPropertyValue.call(this, prop, 'skew', initial, DEFAULT.skew);
+            _setPropertyValue.call(this, prop, 'skew', initial, DEFAULT.skew, set.transition);
         }
         if(value !== undefined || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew);
+            _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew, set.transition);
         }
 
         if(this._shouldDoSingleTween){
-            let givenTransformation = typeof set.curve === 'function' ? set : set.curve;
+            let givenTransformation = typeof set.transition === 'function' ? set : set.transition;
             /* Reset variable */
             this._shouldDoSingleTween = false;
             this._singleTweenProperties = givenTransformation || {curve: function linear(x){ return x; }, duration: 1000};
