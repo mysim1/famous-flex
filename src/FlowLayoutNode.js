@@ -600,7 +600,6 @@ define(function (require, exports, module) {
             _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale);
         }
         if (value !== undefined || (prop && prop.init)){
-            value = DEFAULT.scale;
             _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale);
         }
 
