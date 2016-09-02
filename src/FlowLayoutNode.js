@@ -392,8 +392,9 @@ define(function (require, exports, module) {
     /**
      * Helper function to set the property of a node (e.g. opacity, translate, etc..)
      */
-    function _setPropertyValue(prop, propName, endState, defaultValue, immediate, transition) {
-
+    function _setPropertyValue(prop, propName, endState, defaultValue, transition) {
+        //TODO: See if we can remove this
+        var immediate = false;
         // Get property
         prop = prop || this._properties[propName];
 
@@ -431,7 +432,7 @@ define(function (require, exports, module) {
                         var lockVar = this._lockTransitionable.get();
                         //Complex code for calculating the velocity of the current ongoing animation
                         var velocity = this._lockTransitionable.velocity;
-                        var curve = this._singleTweenProperties.curve;
+                        var curve = this._singleTweenProperties.curve || function linear(x) {return x};
                         var duration = this._singleTweenProperties.duration;
                         var epsilon = 1e-7;
                         var curveDelta = (curve(lockVar) - curve(lockVar - epsilon)) / epsilon;
@@ -565,10 +566,7 @@ define(function (require, exports, module) {
         }
 
         // set size
-        // TODO: This doesn't seem to work for some reason
-        var hasInsertSize = false;
         if (this._insertSpec && this._insertSpec.size) {
-            hasInsertSize = true;
             var initial = this._insertSpec.size;
             _setPropertyValue.call(this, prop, 'size', initial, defaultSize, set.transition);
         }
@@ -588,7 +586,7 @@ define(function (require, exports, module) {
                     return initial[index] + value[index]
                 }), DEFAULT.translate, undefined, true);
             }
-            _setPropertyValue.call(this, prop, 'translate', value, DEFAULT.translate, undefined, set.transition);
+            _setPropertyValue.call(this, prop, 'translate', value, DEFAULT.translate, set.transition);
         }
 
         // set scale
