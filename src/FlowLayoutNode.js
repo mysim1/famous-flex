@@ -626,7 +626,7 @@ define(function (require, exports, module) {
         }
 
         if(this._shouldDoSingleTween){
-            let givenTransformation = typeof set.transition === 'function' ? set : set.transition;
+            var givenTransformation = typeof set.transition === 'function' ? set : set.transition;
             /* Reset variable */
             this._shouldDoSingleTween = false;
             this._singleTweenProperties = givenTransformation || {curve: function linear(x){ return x; }, duration: 1000};
