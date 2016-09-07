@@ -49,7 +49,7 @@ define(function (require, exports, module) {
             this._pe = new PhysicsEngine();
             this._pe.on('end', function() {
                 if(!this._shouldDoSingleTween){
-                    emitIfPossible(this.renderNode, 'flowEnd');
+                    this._completeFlowCallback({reason: 'flowEnd'});
                 }
             }.bind(this));
             this._pe.sleep();
@@ -625,6 +625,17 @@ define(function (require, exports, module) {
             _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew, set.transition);
         }
 
+        if(set.callback){
+            if(this._currentCallback && this._currentCallback !== set.callback){
+                /* Interrupt */
+                this._currentCallback({reason: 'flowInterrupted'});
+            }
+            this._currentCallback = set.callback;
+        }
+
+
+
+
         if(this._shouldDoSingleTween){
             var givenTransformation = typeof set.transition === 'function' ? set : set.transition;
             /* Reset variable */
@@ -632,7 +643,8 @@ define(function (require, exports, module) {
             this._singleTweenProperties = givenTransformation || {curve: function linear(x){ return x; }, duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
                 if(this._singleTween){
-                    emitIfPossible(this.renderNode, 'flowEnd');
+                    this._completeFlowCallback({reason: 'flowEnd'});
+
                     this._singleTween = false;
                     for(var propName in this._properties){
                         var prop = this._properties[propName];
@@ -643,25 +655,27 @@ define(function (require, exports, module) {
                         }
                     }
                 }
-
             }.bind(this));
             this._singleTween = true;
         } else if(this._shouldDisableSingleTween){
             this._singleTween = false;
             this._shouldDisableSingleTween = false;
             this.releaseLock();
-            emitIfPossible(this.renderNode, 'flowInterrupted');
+            this._completeFlowCallback({reason: 'flowInterrupted'});
+        } else if(this._pe.isSleeping() && !this._singleTween){
+            /* The props of the renderable have not changed, yet it was reflown. No tweening will be performed. */
+            this._completeFlowCallback({reason: 'flowSkipped'});
         }
 
         this._insertSpec = undefined;
     };
 
-    function emitIfPossible(renderNode, eventName){
-        var emitter = renderNode.emit ? renderNode : renderNode._eventOutput;
-        if(emitter){
-            emitter.emit.call(emitter,eventName);
+    FlowLayoutNode.prototype._completeFlowCallback = function(options) {
+        if(this._currentCallback) {
+            this._currentCallback(options);
+            delete this._currentCallback;
         }
-    }
+    };
 
     module.exports = FlowLayoutNode;
 });
