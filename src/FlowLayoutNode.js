@@ -439,8 +439,13 @@ define(function (require, exports, module) {
                         ['x','y','z'].forEach(function(dimension) {
                             var distanceToTravel = (prop.endState[dimension] - prop.curState[dimension]);
                             var distanceTraveled = distanceToTravel * lockVar;
-                            prop.velocity[dimension] = - 1 * curveDelta * (prop.curState[dimension] - prop.endState[dimension]) / duration;
-                            prop.curState[dimension] = (prop.curState[dimension] + distanceTraveled);
+                            if(!duration){
+                                prop.curState[dimension] = prop.endState[dimension];
+                            } else {
+                                prop.velocity[dimension] = - 1 * curveDelta * (prop.curState[dimension] - prop.endState[dimension]) / duration;
+                                prop.curState[dimension] = (prop.curState[dimension] + distanceTraveled) || 0;
+                            }
+
                         });
                         this._shouldDisableSingleTween = true;
                     }
@@ -461,7 +466,10 @@ define(function (require, exports, module) {
                     }),
                     endState: new Vector(endState)
                 };
+
+
                 prop.curState = prop.particle.position;
+
                 prop.velocity = prop.particle.velocity;
                 prop.force = new Spring(this.options.spring);
                 prop.force.setOptions({
@@ -634,8 +642,6 @@ define(function (require, exports, module) {
         }
 
 
-
-
         if(this._shouldDoSingleTween){
             var givenTransformation = typeof set.transition === 'function' ? set : set.transition;
             /* Reset variable */
@@ -658,10 +664,10 @@ define(function (require, exports, module) {
             }.bind(this));
             this._singleTween = true;
         } else if(this._shouldDisableSingleTween){
+            /* This will have FlowLayoutNode.set() called again the next render tick, at which point _shouldDoSingleTween will have been set to true again. */
             this._singleTween = false;
             this._shouldDisableSingleTween = false;
             this.releaseLock();
-            this._completeFlowCallback({reason: 'flowInterrupted'});
         } else if(this._pe.isSleeping() && !this._singleTween){
             /* The props of the renderable have not changed, yet it was reflown. No tweening will be performed. */
             this._completeFlowCallback({reason: 'flowSkipped'});
