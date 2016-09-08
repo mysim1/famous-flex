@@ -952,8 +952,10 @@ define(function (require, exports, module) {
                 }
                 if (lock !== undefined) {
                     var node = this._nodes.getStartEnumNode();
-                    while (node && node.releaseLock) {
-                        node.releaseLock(lock);
+                    while (node) {
+                        if(node.releaseLock){
+                            node.releaseLock(lock);
+                        }
                         node = node._next;
                     }
                 }
