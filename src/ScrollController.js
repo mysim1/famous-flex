@@ -1977,25 +1977,11 @@ define(function(require, exports, module) {
 
             /* Depending on whether an inserted node is in view or not, we might have to enable flowing mode */
 
-            var haveDirtyRenderablesThisTick = false;
-            if(this._dirtyRenderables.thisTick.length){
-                haveDirtyRenderablesThisTick = true;
-                /* If noone of the newly inserted renderables are displaying then we don't need a new flow */
-                if(this._dirtyRenderables.thisTick.every(function(dirtyRenderable){return !dirtyRenderable._isDisplaying})){
-                    this._isDirty = false;
-                } else {
-                    this._isDirty = true;
-                }
-                this._dirtyRenderables.thisTick = [];
-            }
+            if(this._dirtyRenderables.length){
+                /*this._dirtyRenderables.thisTick = this._dirtyRenderables.thisTick.concat(this._dirtyRenderables.nextTick);*/
+                this._isDirty = !this._dirtyRenderables.every(function(dirtyRenderable){return !this._nodes.isNodeInCurrentBuild(dirtyRenderable)}.bind(this));
+                this._dirtyRenderables = [];
 
-            if(this._dirtyRenderables.nextTick.length){
-                this._dirtyRenderables.thisTick = this._dirtyRenderables.thisTick.concat(this._dirtyRenderables.nextTick);
-                this._dirtyRenderables.nextTick = [];
-                if(!haveDirtyRenderablesThisTick){
-                    this._isDirty = false;
-                    this._reLayout = true
-                }
             }
 
             // When the layout has changed, and we are not just scrolling,
@@ -2109,7 +2095,7 @@ define(function(require, exports, module) {
             target: this.group.render()
         };
     };
-    
+
     ScrollController.prototype.replace = function(indexOrId, renderable, noAnimation) {
         var sequence;
         //TODO: Check when _nodesById is used as well

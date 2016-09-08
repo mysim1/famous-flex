@@ -67,7 +67,7 @@ define(function (require, exports, module) {
         this._isDirty = true;
         this._contextSizeCache = [0, 0];
         this._commitOutput = {};
-        this._dirtyRenderables = {nextTick: [], thisTick: []};
+        this._dirtyRenderables = [];
 
         // Create an object to we can capture the famo.us cleanup call on
         // LayoutController.
@@ -600,7 +600,9 @@ define(function (require, exports, module) {
 
         // When a custom insert-spec was specified, store that in the layout-node
         if (insertSpec) {
-            this._nodes.insertNode(this._nodes.createNode(renderable, insertSpec));
+            var newNode = this._nodes.createNode(renderable, insertSpec);
+            newNode.executeInsertSpec();
+            this._nodes.insertNode(newNode);
         }
 
         // Auto pipe events
@@ -612,12 +614,8 @@ define(function (require, exports, module) {
         // Force a reflow
         this._isDirty = true;
 
-        /* If the renderable has or is a layoutController, we can store it in order to do more efficient reflows */
-        if (renderable instanceof LayoutController) {
-            this._dirtyRenderables.nextTick.push(renderable);
-        } else if (renderable.layout instanceof LayoutController) {
-            this._dirtyRenderables.nextTick.push(renderable.layout);
-        }
+        this._dirtyRenderables.push(renderable);
+
 
         return this;
     };

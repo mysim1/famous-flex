@@ -22,10 +22,12 @@
  *
  * @module
  */
+
 define(function(require, exports, module) {
 
     // import dependencies
     var LayoutContext = require('./LayoutContext');
+    var Map = require('es6-map');
     var LayoutUtility = require('./LayoutUtility');
     var Surface = require('famous/core/Surface');
     var RenderNode = require('famous/core/RenderNode');
@@ -91,6 +93,7 @@ define(function(require, exports, module) {
             node.reset();
             node = node._next;
         }
+        this._nodeIdInCurrentBuild = new Map();
 
         // Prepare data
         var context = this._context;
@@ -367,6 +370,9 @@ define(function(require, exports, module) {
         }
     }
 
+    LayoutNodeManager.prototype.isNodeInCurrentBuild = function(node) {
+        return !!this._nodeIdInCurrentBuild.get(node);
+    };
     /**
      * Gets start layout-node for enumeration.
      *
@@ -643,6 +649,8 @@ define(function(require, exports, module) {
     function _contextSet(contextNodeOrId, set) {
         var contextNode = this._nodesById ? _contextGet.call(this, contextNodeOrId) : contextNodeOrId;
         if (contextNode) {
+            /* Keeps track of which nodes that have been set */
+            this._nodeIdInCurrentBuild.set(contextNode.renderNode, true);
             var node = contextNode.node;
             if (!node) {
                 if (contextNode.next) {

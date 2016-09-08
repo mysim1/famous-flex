@@ -71,13 +71,14 @@ define(function (require, exports, module) {
             this._lockTransitionable.halt();
             this._lockTransitionable.reset(1);
         }
-
         this._specModified = true;
+
+        if (spec) {
+            this.setInsertSpec(spec);
+        }
         this._initial = true;
         this._spec.endState = {};
-        if (spec) {
-            this.setSpec(spec);
-        }
+
         /* Assume non-existance by default */
         this._exists = false;
     }
@@ -149,8 +150,15 @@ define(function (require, exports, module) {
     /**
      * Set the properties from a spec.
      */
-    FlowLayoutNode.prototype.setSpec = function (spec) {
-        this._insertSpec = spec;
+    FlowLayoutNode.prototype.setInsertSpec = function (spec) {
+        this._latentInsertSpec = spec;
+    };
+
+    /**
+     * Set the properties from a spec.
+     */
+    FlowLayoutNode.prototype.executeInsertSpec = function () {
+        this._insertSpec = this._latentInsertSpec;
     };
 
     /**
@@ -176,7 +184,7 @@ define(function (require, exports, module) {
         // Transition to the remove-spec state
         this._removing = true;
         if (removeSpec) {
-            this.setSpec(removeSpec);
+            this.setInsertSpec(removeSpec);
         }
         else {
             this._pe.sleep();
