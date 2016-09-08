@@ -105,5 +105,8 @@
     "famous/core/RenderNode": "global:famous.core.RenderNode",
     "famous/core/Modifier": "global:famous.core.Modifier",
     "famous/modifiers/StateModifier": "global:famous.modifiers.StateModifier"
+  },
+  "dependencies": {
+    "es6-map": "^0.1.4"
   }
 }
