@@ -1,12 +1,13 @@
 {
   "name": "famous-flex",
   "version": "0.3.9",
+  "registry": "npm",
   "homepage": "https://github.com/IjzerenHein/famous-flex",
   "repository": {
     "type": "git",
     "url": "git://github.com/IjzerenHein/famous-flex.git"
   },
-  "main": "dist/famous-flex-global.template.js",
+  "main": "famous-flex.js",
   "author": {
     "name": "Hein Rutjes <hrutjes@gmail.com>"
   },
@@ -62,7 +63,8 @@
     "grunt-eslint": "^16.0.0",
     "grunt-exec": "^0.4.6",
     "grunt-jscs": "^1.8.0",
-    "grunt-jsdoc-to-markdown": "^1.1.1"
+    "grunt-jsdoc-to-markdown": "^1.1.1",
+    "plugin-babel": "systemjs-plugin-babel@^0.0.14"
   },
   "files": [
     "src",
@@ -72,6 +74,11 @@
     "dist/famous-flex.min.js",
     "LICENSE"
   ],
+  "peerDependencies": {
+    "events": "github:jspm/nodelibs-events@^0.2.0-alpha",
+    "path": "github:jspm/nodelibs-path@^0.2.0-alpha",
+    "process": "github:jspm/nodelibs-process@^0.2.0-alpha"
+  },
   "jspm": {
     "directories": {
       "lib": "src"
