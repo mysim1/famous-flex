@@ -219,7 +219,7 @@ define(function (require, exports, module) {
         if (!prop || !prop.init) {
             return def;
         }
-         return [
+        return [
             prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / precision) * precision) : prop.endState.x,
             prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / precision) * precision) : prop.endState.y,
             prop.enabled[2] ? (Math.round((prop.curState.z + ((prop.endState.z - prop.curState.z) * lockValue)) / precision) * precision) : prop.endState.z
@@ -444,17 +444,20 @@ define(function (require, exports, module) {
                         var duration = this._singleTweenProperties.duration;
                         var epsilon = 1e-7;
                         var curveDelta = (curve(lockVar) - curve(lockVar - epsilon)) / epsilon;
-                        ['x','y','z'].forEach(function(dimension) {
-                            var distanceToTravel = (prop.endState[dimension] - prop.curState[dimension]);
-                            var distanceTraveled = distanceToTravel * lockVar;
-                            if(!duration){
-                                prop.curState[dimension] = prop.endState[dimension];
-                            } else {
-                                prop.velocity[dimension] = - 1 * curveDelta * (prop.curState[dimension] - prop.endState[dimension]) / duration;
-                                prop.curState[dimension] = (prop.curState[dimension] + distanceTraveled) || 0;
-                            }
+                        for(var otherPropName in this._properties){
+                            var prop = this._properties[otherPropName];
+                            ['x','y','z'].forEach(function(dimension) {
+                                var distanceToTravel = (prop.endState[dimension] - prop.curState[dimension]);
+                                var distanceTraveled = distanceToTravel * lockVar;
+                                if(!duration){
+                                    prop.curState[dimension] = prop.endState[dimension];
+                                } else {
+                                    prop.velocity[dimension] = - 1 * curveDelta * (prop.curState[dimension] - prop.endState[dimension]) / duration;
+                                    prop.curState[dimension] = (prop.curState[dimension] + distanceTraveled) || 0;
+                                }
+                            });
+                        }
 
-                        });
                         this._shouldDisableSingleTween = true;
                     }
                     _assignVectorFromArray(prop.endState, value);
@@ -492,7 +495,12 @@ define(function (require, exports, module) {
                 prop.endState.set(endState);
             }
             if (!this._initial && !immediate) {
-                this._pe.wake();
+                if(wasSleeping && transition && !this._singleTween){
+                    this._shouldDoSingleTween = true;
+                    this._pe.sleep()
+                } else {
+                    this._pe.wake();
+                }
             }
             else if (wasSleeping) {
                 this._pe.sleep(); // nothing has changed, put back to sleep
@@ -657,8 +665,6 @@ define(function (require, exports, module) {
             this._singleTweenProperties = givenTransformation || {curve: function linear(x){ return x; }, duration: 1000};
             this.releaseLock(true, this._singleTweenProperties, function() {
                 if(this._singleTween){
-                    this._completeFlowCallback({reason: 'flowEnd'});
-
                     this._singleTween = false;
                     for(var propName in this._properties){
                         var prop = this._properties[propName];
@@ -668,6 +674,7 @@ define(function (require, exports, module) {
                             prop.curState.z = prop.endState.z;
                         }
                     }
+                    this._completeFlowCallback({reason: 'flowEnd'});
                 }
             }.bind(this));
             this._singleTween = true;
