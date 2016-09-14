@@ -420,7 +420,7 @@ define(function (require, exports, module) {
             var newPropsAreDifferent = !_approxEqual3d(value, prop.endState);
 
             // If we reached an end state and we shouldn't go to another state
-            if (this._pe.isSleeping() && !this._singleTween && newPropsAreDifferent && !this._shouldDisableSingleTween && transition) {
+            if (this._pe.isSleeping() && !this._singleTween && newPropsAreDifferent && !this._disableSingleTween && transition) {
                 _assignVectorFromArray(prop.endState, value);
                 this._shouldDoSingleTween = true;
             } else {
@@ -437,30 +437,15 @@ define(function (require, exports, module) {
                 else if (newPropsAreDifferent) {
                     this._shouldDoSingleTween = false;
                     if(this._singleTween){
-                        var lockVar = this._lockTransitionable.get();
-                        //Complex code for calculating the velocity of the current ongoing animation
-                        var velocity = this._lockTransitionable.velocity;
-                        var curve = this._singleTweenProperties.curve || function linear(x) {return x};
-                        var duration = this._singleTweenProperties.duration;
-                        var epsilon = 1e-7;
-                        var curveDelta = (curve(lockVar) - curve(lockVar - epsilon)) / epsilon;
-                        for(var otherPropName in this._properties){
-                            var prop = this._properties[otherPropName];
-                            ['x','y','z'].forEach(function(dimension) {
-                                var distanceToTravel = (prop.endState[dimension] - prop.curState[dimension]);
-                                var distanceTraveled = distanceToTravel * lockVar;
-                                if(!duration){
-                                    prop.curState[dimension] = prop.endState[dimension];
-                                } else {
-                                    prop.velocity[dimension] = - 1 * curveDelta * (prop.curState[dimension] - prop.endState[dimension]) / duration;
-                                    prop.curState[dimension] = (prop.curState[dimension] + distanceTraveled) || 0;
-                                }
-                            });
+                        if(!this._disableSingleTween){
+                            this._disableSingleTween = {}
                         }
-
-                        this._shouldDisableSingleTween = true;
+                        this._disableSingleTween[propName] = true;
+                        this.interruptPropertyTween(propName);
                     }
                     _assignVectorFromArray(prop.endState, value);
+
+
                     this._pe.wake();
                 }
             }
@@ -678,10 +663,17 @@ define(function (require, exports, module) {
                 }
             }.bind(this));
             this._singleTween = true;
-        } else if(this._shouldDisableSingleTween){
+        } else if(this._disableSingleTween){
             /* This will have FlowLayoutNode.set() called again the next render tick, at which point _shouldDoSingleTween will have been set to true again. */
             this._singleTween = false;
-            this._shouldDisableSingleTween = false;
+            for(var otherPropName in this._properties){
+                if(!(otherPropName in this._disableSingleTween)){
+                    this.interruptPropertyTween(otherPropName);
+                }
+            }
+            this._disableSingleTween = false;
+
+
             this.releaseLock();
         } else if(this._pe.isSleeping() && !this._singleTween){
             /* The props of the renderable have not changed, yet it was reflown. No tweening will be performed. */
@@ -689,6 +681,28 @@ define(function (require, exports, module) {
         }
 
         this._insertSpec = undefined;
+    };
+
+
+    FlowLayoutNode.prototype.interruptPropertyTween = function(propertyName) {
+        var lockVar = this._lockTransitionable.get();
+        //Complex code for calculating the velocity of the current ongoing animation
+        var velocity = this._lockTransitionable.velocity;
+        var curve = this._singleTweenProperties.curve || function linear(x) {return x};
+        var duration = this._singleTweenProperties.duration;
+        var epsilon = 1e-7;
+        var curveDelta = (curve(lockVar) - curve(lockVar - epsilon)) / epsilon;
+        var adjustedProp = this._properties[propertyName];
+        ['x','y','z'].forEach(function(dimension) {
+            var distanceToTravel = (adjustedProp.endState[dimension] - adjustedProp.curState[dimension]);
+            var distanceTraveled = distanceToTravel * lockVar;
+            if(!duration){
+                adjustedProp.curState[dimension] = adjustedProp.endState[dimension];
+            } else {
+                adjustedProp.velocity[dimension] = -1 * curveDelta * (adjustedProp.curState[dimension] - adjustedProp.endState[dimension]) / duration;
+                adjustedProp.curState[dimension] = (adjustedProp.curState[dimension] + distanceTraveled) || 0;
+            }
+        });
     };
 
     FlowLayoutNode.prototype._completeFlowCallback = function(options) {
