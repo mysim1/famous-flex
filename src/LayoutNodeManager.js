@@ -298,22 +298,20 @@ define(function(require, exports, module) {
      */
     LayoutNodeManager.prototype.createNode = function(renderNode, spec) {
         var node;
+        var layoutNodeClass = this.getLayoutNodeClassForRenderNode(renderNode);
         if (this._pool.layoutNodes.first) {
             node = this._pool.layoutNodes.first;
             this._pool.layoutNodes.first = node._next;
             this._pool.layoutNodes.size--;
-            node.constructor.apply(node, arguments);
+            if(this._partialFlow){
+                node = new layoutNodeClass(renderNode, spec);
+            } else {
+                node.constructor.apply(node, arguments);
+            }
+
         }
         else {
-            if(this._partialFlow){
-                if(renderNode.isFlowy){
-                    node = new FlowLayoutNode(renderNode, spec);
-                } else {
-                    node = new LayoutNode(renderNode, spec);
-                }
-            } else {
-                node = new this.LayoutNode(renderNode, spec);
-            }
+            node = new layoutNodeClass(renderNode, spec);
 
             if (this._nodeOptions) {
                 node.setOptions(this._nodeOptions);
@@ -329,6 +327,16 @@ define(function(require, exports, module) {
         return node;
     };
 
+    LayoutNodeManager.prototype.getLayoutNodeClassForRenderNode = function(renderNode) {
+        if (this._partialFlow) {
+            if (renderNode.isFlowy) {
+                return FlowLayoutNode;
+            } else {
+                return LayoutNode;
+            }
+        }
+      return this.LayoutNode;
+    };
     /**
      * Removes all nodes.
      */
