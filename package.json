@@ -2,6 +2,7 @@
   "name": "famous-flex",
   "version": "0.3.9",
   "registry": "npm",
+  "format": "amd",
   "homepage": "https://github.com/IjzerenHein/famous-flex",
   "repository": {
     "type": "git",
@@ -75,9 +76,9 @@
     "LICENSE"
   ],
   "peerDependencies": {
-    "events": "github:jspm/nodelibs-events@^0.2.0-alpha",
-    "path": "github:jspm/nodelibs-path@^0.2.0-alpha",
-    "process": "github:jspm/nodelibs-process@^0.2.0-alpha"
+    "events": "github:jspm/nodelibs-events@0.2.0-alpha",
+    "path": "github:jspm/nodelibs-path@0.2.0-alpha",
+    "process": "github:jspm/nodelibs-process@0.2.0-alpha"
   },
   "jspm": {
     "directories": {
