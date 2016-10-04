@@ -28,6 +28,7 @@
 define(function (require, exports, module) {
 
     // import dependencies
+    var NativeScrollGroup = require('famous/core/NativeScrollGroup');
     var Utility = require('famous/utilities/Utility');
     var Entity = require('famous/core/Entity');
     var ViewSequence = require('famous/core/ViewSequence');
@@ -92,10 +93,11 @@ define(function (require, exports, module) {
         this._eventOutput = new EventHandler();
         EventHandler.setOutputHandler(this, this._eventOutput);
 
-        // Data-source
-        //this._dataSource = undefined;
-        //this._nodesById = undefined;
-        //this._viewSequence = undefined;
+        if(options.nativeScroll){
+            // Create groupt for faster rendering
+            this.group = new NativeScrollGroup();
+            this.group.add({render: this._innerRender.bind(this)});
+        }
 
         // Layout
         this._layout = {
@@ -1031,6 +1033,7 @@ define(function (require, exports, module) {
             this._lastResultUntouched = !result.modified;
         }
 
+
         // Render child-nodes every commit
         var target = this._commitOutput.target;
         for (var i = 0, j = target.length; i < j; i++) {
@@ -1046,17 +1049,39 @@ define(function (require, exports, module) {
             target.push(this._cleanupRegistration);
         }
 
+
+
         // Translate dependent on origin
         if (origin && ((origin[0] !== 0) || (origin[1] !== 0))) {
             transform = Transform.moveThen([-size[0] * origin[0], -size[1] * origin[1], 0], transform);
         }
+        if(this.globalTransform){
+            transform = Transform.multiply(transform, this.globalTransform);
+        }
+
+
         this._commitOutput.size = size;
         this._commitOutput.opacity = opacity;
         this._commitOutput.transform = transform;
+
+        if(this.options.nativeScroll){
+            // Return the spec
+            return {
+                transform: transform,
+                size: size,
+                opacity: opacity,
+                target: this.group.render()
+            };
+        }
+
         return this._commitOutput;
     };
 
-    /**
+    LayoutController.prototype._innerRender = function () {
+        return this._commitOutput.target;
+    };
+
+        /**
      * Called whenever the layout-controller is removed from the render-tree.
      *
      * @private
