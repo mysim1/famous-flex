@@ -523,7 +523,7 @@ define(function (require, exports, module) {
         });
     }
     function _assignVectorFromArray(vector, array) {
-        vector.x = array[0] === true ? vector.endState.x : array[0];
+        vector.x = array[0] === true ? vector.x : array[0];
         vector.y = (array.length > 1) ? array[1] === true ? vector.endState.y : array[1] : 0;
         vector.z = (array.length > 2) ? array[2] : 0;
     }
