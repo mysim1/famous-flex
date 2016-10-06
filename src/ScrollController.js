@@ -47,6 +47,8 @@ define(function(require, exports, module) {
     var Transform = require('famous/core/Transform');
     var EventHandler = require('famous/core/EventHandler');
     var Group = require('famous/core/Group');
+    var Engine = require('famous/core/Engine');
+    var NativeScrollGroup = require('famous/core/NativeScrollGroup');
     var Vector = require('famous/math/Vector');
     var PhysicsEngine = require('famous/physics/PhysicsEngine');
     var Particle = require('famous/physics/bodies/Particle');
@@ -144,9 +146,17 @@ define(function(require, exports, module) {
             layoutCount: 0,
             commitCount: 0
         };
+        if(options.nativeScroll){
 
-        // Create groupt for faster rendering
-        this.group = new Group();
+            // Create group for faster rendering
+            this.group = new NativeScrollGroup();
+            Engine.enableTouchMove();
+            this.options.enabled = false;
+            this.options.layoutAll = false;
+        } else {
+            // Create group for faster rendering
+            this.group = new Group();
+        }
         this.group.add({render: _innerRender.bind(this)});
 
         // Configure physics engine with particle and drag
@@ -158,22 +168,24 @@ define(function(require, exports, module) {
             this._scroll.frictionForceId = this._scroll.pe.attach(this._scroll.frictionForce, this._scroll.particle);
         }
         this._scroll.springForce.setOptions({ anchor: this._scroll.springEndState });
+        if(!options.nativeScroll){
+            // Listen to touch events
+            this._eventInput.on('touchstart', _touchStart.bind(this));
+            this._eventInput.on('touchmove', _touchMove.bind(this));
+            this._eventInput.on('touchend', _touchEnd.bind(this));
+            this._eventInput.on('touchcancel', _touchEnd.bind(this));
 
-        // Listen to touch events
-        this._eventInput.on('touchstart', _touchStart.bind(this));
-        this._eventInput.on('touchmove', _touchMove.bind(this));
-        this._eventInput.on('touchend', _touchEnd.bind(this));
-        this._eventInput.on('touchcancel', _touchEnd.bind(this));
+            // Listen to mouse-move events
+            this._eventInput.on('mousedown', _mouseDown.bind(this));
+            this._eventInput.on('mouseup', _mouseUp.bind(this));
+            this._eventInput.on('mousemove', _mouseMove.bind(this));
+            // Listen to mouse-wheel events
+            this._scrollSync = new ScrollSync(this.options.scrollSync);
+            this._eventInput.pipe(this._scrollSync);
+            this._scrollSync.on('update', _scrollUpdate.bind(this));
+        }
 
-        // Listen to mouse-move events
-        this._eventInput.on('mousedown', _mouseDown.bind(this));
-        this._eventInput.on('mouseup', _mouseUp.bind(this));
-        this._eventInput.on('mousemove', _mouseMove.bind(this));
 
-        // Listen to mouse-wheel events
-        this._scrollSync = new ScrollSync(this.options.scrollSync);
-        this._eventInput.pipe(this._scrollSync);
-        this._scrollSync.on('update', _scrollUpdate.bind(this));
 
         // Embed in container surface if neccesary
         if (this.options.useContainer) {
@@ -1272,11 +1284,11 @@ define(function(require, exports, module) {
      * Helper function that scrolls the view towards a view-sequence node.
      */
     function _ensureVisibleSequence(viewSequence, next) {
-        this._scroll.scrollToSequence = undefined;
-        this._scroll.scrollToRenderNode = undefined;
-        this._scroll.ensureVisibleRenderNode = viewSequence.get();
-        this._scroll.scrollToDirection = next;
-        this._scroll.scrollDirty = true;
+            this._scroll.scrollToSequence = undefined;
+            this._scroll.scrollToRenderNode = undefined;
+            this._scroll.ensureVisibleRenderNode = viewSequence.get();
+            this._scroll.scrollToDirection = next;
+            this._scroll.scrollDirty = true;
     }
 
     /**
@@ -1784,11 +1796,14 @@ define(function(require, exports, module) {
                 scrollStart -= size[this._direction];
                 scrollEnd -= size[this._direction];
             }
+        } else if(this.options.nativeScroll){
+            scrollStart = 0;
         }
         if (this.options.layoutAll) {
             scrollStart = -1000000;
             scrollEnd = 1000000;
         }
+        var layoutScrollOffset = this.options.alignment ? (scrollOffset + size[this._direction]) : scrollOffset;
 
         // Prepare for layout
         var layoutContext = this._nodes.prepareForLayout(
@@ -1797,7 +1812,7 @@ define(function(require, exports, module) {
                 size: size,
                 direction: this._direction,
                 reverse: this.options.alignment ? true : false,
-                scrollOffset: this.options.alignment ? (scrollOffset + size[this._direction]) : scrollOffset,
+                scrollOffset: layoutScrollOffset,
                 scrollStart: scrollStart,
                 scrollEnd: scrollEnd
             }
@@ -1833,10 +1848,13 @@ define(function(require, exports, module) {
         // When pagination is enabled, snap to page
         _snapToPage.call(this);
 
+
         // Normalize scroll offset so that the current viewsequence node is as close to the
         // top as possible and the layout function will need to process the least amount
         // of renderables.
         scrollOffset = _normalizeViewSequence.call(this, size, scrollOffset);
+
+
 
         // If the bounds have changed, and the scroll-offset would be different
         // than before, then re-layout entirely using the new offset.
@@ -1913,9 +1931,14 @@ define(function(require, exports, module) {
             this._isDirty = true;
             this._nodes.removeAll();
         }
-
-        // Calculate scroll offset
+        //Calculate the scrollOffset, but don't store the variable if using native scroll
         var scrollOffset = _calcScrollOffset.call(this, true, true);
+        if(this.options.nativeScroll){
+            if(this.group._element){
+                scrollOffset = this.group._element.scrollTop + this.options.extraBoundsSpace[0] - this._scroll.groupStart;
+            }
+        }
+
         if (this._scrollOffsetCache === undefined) {
             this._scrollOffsetCache = scrollOffset;
         }
@@ -2058,6 +2081,13 @@ define(function(require, exports, module) {
             }
         }
 
+        if(this._stickBottom){
+            var element = this.group._element;
+            if(element){
+                element.scrollTop = element.scrollHeight;
+            }
+        }
+
         // Emit end scrolling event
         if (emitEndScrollingEvent) {
             this._scroll.isScrolling = false;
@@ -2079,10 +2109,14 @@ define(function(require, exports, module) {
         // to the scrollOffset. For layouts that don't layout sequence, disable
         // this behavior as it will be decremental to the performance.
         var transform = context.transform;
-        if (sequentialScrollingOptimized) {
+        if (sequentialScrollingOptimized ) {
             var windowOffset = scrollOffset + this._scroll.groupStart;
             var translate = [0, 0, 0];
-            translate[this._direction] = windowOffset;
+            if(!this.options.nativeScroll){
+                translate[this._direction] = windowOffset;
+            } else if(this.group._element) {
+                this.group._element.scrollTop = windowOffset - this.options.extraBoundsSpace[0];
+            }
             transform = Transform.thenMove(transform, translate);
         }
 
