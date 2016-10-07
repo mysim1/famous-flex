@@ -529,6 +529,10 @@ define(function (require, exports, module) {
     }
 
 
+    FlowLayoutNode.prototype.getTranslate = function () {
+        var translate =this._properties.translate.endState;
+        return [translate.x, translate.y, translate.z];
+    }
     /**
      * context.set(..)
      */
