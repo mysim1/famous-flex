@@ -54,6 +54,7 @@ define(function(require, exports, module) {
             get: _contextGet.bind(this),
             set: _contextSet.bind(this),
             resolveSize: _contextResolveSize.bind(this),
+            markStartSequence: _markStartSequence.bind(this),
             size: [0, 0]
             //,cycle: 0
         });
@@ -86,7 +87,7 @@ define(function(require, exports, module) {
      * @return {LayoutContext} context which can be passed to the layout-function
      */
     LayoutNodeManager.prototype.prepareForLayout = function(viewSequence, nodesById, contextData) {
-
+        this._startSequence = null;
         // Reset all nodes
         var node = this._first;
         while (node) {
@@ -112,17 +113,20 @@ define(function(require, exports, module) {
         contextState.nextSequence = viewSequence;
         contextState.prevSequence = viewSequence;
         contextState.start = undefined;
+
         contextState.nextGetIndex = 0;
         contextState.prevGetIndex = 0;
         contextState.nextSetIndex = 0;
         contextState.prevSetIndex = 0;
         contextState.addCount = 0;
         contextState.removeCount = 0;
+        contextState.lastNode = undefined;
         contextState.lastRenderNode = undefined;
 
         // Prepare content
         context.size[0] = contextData.size[0];
         context.size[1] = contextData.size[1];
+        context.scrollLength = contextData.scrollLength;
         context.direction = contextData.direction;
         context.reverse = contextData.reverse;
         context.alignment = contextData.reverse ? 1 : 0;
@@ -155,9 +159,13 @@ define(function(require, exports, module) {
         }
     };
 
+    LayoutNodeManager.prototype.getLastNode = function() {
+        return this._contextState.lastNode;
+    }
     /**
      * Cleans up any unaccessed virtual nodes that have been created by a VirtualViewSequence.
      */
+
     LayoutNodeManager.prototype.removeVirtualViewSequenceNodes = function() {
         if (this._contextState.startSequence && this._contextState.startSequence.cleanup) {
             this._contextState.startSequence.cleanup();
@@ -327,6 +335,10 @@ define(function(require, exports, module) {
         return node;
     };
 
+    LayoutNodeManager.prototype.getStartSequence = function() {
+        return this._startSequence;
+    };
+
     LayoutNodeManager.prototype.getLayoutNodeClassForRenderNode = function(renderNode) {
         if (this._partialFlow) {
             if (renderNode.isFlowy) {
@@ -398,49 +410,6 @@ define(function(require, exports, module) {
             return (this._contextState.start && !this._contextState.startPrev) ? this._contextState.start._prev : this._contextState.start;
         }
     };
-
-    /**
-     * Checks the integrity of the linked-list.
-     */
-    /*function _checkIntegrity() {
-        var node = this._first;
-        var count = 0;
-        var prevNode;
-        while (node) {
-            if (!node._prev && (node !== this._first)) {
-                throw 'No prev but not first';
-            }
-            if (node._prev !== prevNode) {
-                throw 'Bork';
-            }
-            prevNode = node;
-            node = node._next;
-            count++;
-        }
-    }
-
-    function _checkContextStateIntegrity() {
-        var node = this._contextState.start;
-        while (node) {
-            if (node === this._contextState.next) {
-                break;
-            }
-            if (!node._invalidated) {
-                throw 'WTF';
-            }
-            node = node._next;
-        }
-        node = this._contextState.start;
-        while (node) {
-            if (node === this._contextState.prev) {
-                break;
-            }
-            if (!node._invalidated) {
-                throw 'WTF';
-            }
-            node = node._prev;
-        }
-    }*/
 
     /**
      * Creates or gets a layout node.
@@ -606,10 +575,6 @@ define(function(require, exports, module) {
         if (this._context.reverse) {
             this._contextState.prevSequence = this._contextState.prevSequence.getPrevious();
         }
-        if (this._contextState.lastRenderNode === renderNode) {
-          throw 'ViewSequence is corrupted, should never contain the same renderNode twice, index: ' + prevSequence.getIndex();
-        }
-        this._contextState.lastRenderNode = renderNode;
         return {
             renderNode: renderNode,
             viewSequence: prevSequence,
@@ -684,6 +649,9 @@ define(function(require, exports, module) {
             node.usesTrueSize = contextNode.usesTrueSize;
             node.trueSizeRequested = contextNode.trueSizeRequested;
             node.set(set, this._context.size);
+            if(node.renderNode === this._contextState.lastRenderNode){
+                this._contextState.lastNode = node;
+            }
             contextNode.set = set;
         }
         return set;
@@ -722,7 +690,10 @@ define(function(require, exports, module) {
         return undefined;
     }
 
-    /**
+    function _markStartSequence() {
+        this._startSequence = this._contextState.nextSequence;
+    }
+        /**
      * Resolve the size of the layout-node from the renderable itsself.
      */
     function _contextResolveSize(contextNodeOrId, parentSize) {
