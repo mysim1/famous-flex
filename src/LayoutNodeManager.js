@@ -54,7 +54,7 @@ define(function(require, exports, module) {
             get: _contextGet.bind(this),
             set: _contextSet.bind(this),
             resolveSize: _contextResolveSize.bind(this),
-            markStartSequence: _markStartSequence.bind(this),
+            moveStartSequence: _moveStartSequence.bind(this),
             size: [0, 0]
             //,cycle: 0
         });
@@ -86,8 +86,10 @@ define(function(require, exports, module) {
      * @param {Object} [nodesById] dictionary to use when looking up nodes by id
      * @return {LayoutContext} context which can be passed to the layout-function
      */
+
     LayoutNodeManager.prototype.prepareForLayout = function(viewSequence, nodesById, contextData) {
         this._startSequence = null;
+        this._sequenceMovedDirection = 0;
         // Reset all nodes
         var node = this._first;
         while (node) {
@@ -120,6 +122,8 @@ define(function(require, exports, module) {
         contextState.prevSetIndex = 0;
         contextState.addCount = 0;
         contextState.removeCount = 0;
+        contextState.firstRenderNode = undefined;
+        contextState.firstNode = undefined;
         contextState.lastNode = undefined;
         contextState.lastRenderNode = undefined;
 
@@ -159,9 +163,18 @@ define(function(require, exports, module) {
         }
     };
 
-    LayoutNodeManager.prototype.getLastNode = function() {
+    LayoutNodeManager.prototype.getLastRenderNodeInSequence = function() {
+        return this._contextState.startSequence.getTail().get();
+    };
+
+    LayoutNodeManager.prototype.getFirstRenderedNode = function() {
+        return this._contextState.firstNode;
+    };
+
+    LayoutNodeManager.prototype.getLastRenderedNode = function() {
         return this._contextState.lastNode;
-    }
+    };
+
     /**
      * Cleans up any unaccessed virtual nodes that have been created by a VirtualViewSequence.
      */
@@ -333,6 +346,14 @@ define(function(require, exports, module) {
             this._initLayoutNodeFn.call(this, node, spec);
         }
         return node;
+    };
+
+    LayoutNodeManager.prototype.isSequenceMoved = function() {
+        return !!this._sequenceMovedDirection;
+    };
+
+    LayoutNodeManager.prototype.getMovedSequenceDirection = function() {
+        return this._sequenceMovedDirection;
     };
 
     LayoutNodeManager.prototype.getStartSequence = function() {
@@ -543,6 +564,9 @@ define(function(require, exports, module) {
           throw 'ViewSequence is corrupted, should never contain the same renderNode twice, index: ' + nextSequence.getIndex();
         }
         this._contextState.lastRenderNode = renderNode;
+        if(!this._contextState.firstRenderNode){
+            this._contextState.firstRenderNode = renderNode;
+        }
         return {
             renderNode: renderNode,
             viewSequence: nextSequence,
@@ -575,6 +599,12 @@ define(function(require, exports, module) {
         if (this._context.reverse) {
             this._contextState.prevSequence = this._contextState.prevSequence.getPrevious();
         }
+
+        if(!this._contextState.firstRenderNode){
+            this._contextState.firstRenderNode = renderNode;
+        }
+
+        // this._contextState.firstRenderNode = renderNode;
         return {
             renderNode: renderNode,
             viewSequence: prevSequence,
@@ -649,6 +679,9 @@ define(function(require, exports, module) {
             node.usesTrueSize = contextNode.usesTrueSize;
             node.trueSizeRequested = contextNode.trueSizeRequested;
             node.set(set, this._context.size);
+            if(node.renderNode === this._contextState.firstRenderNode){
+                this._contextState.firstNode = node;
+            }
             if(node.renderNode === this._contextState.lastRenderNode){
                 this._contextState.lastNode = node;
             }
@@ -690,8 +723,13 @@ define(function(require, exports, module) {
         return undefined;
     }
 
-    function _markStartSequence() {
-        this._startSequence = this._contextState.nextSequence;
+    function _moveStartSequence(next) {
+        this._sequenceMovedDirection = next ? 1 : -1;
+        if(next){
+            this._startSequence = this._contextState.nextSequence;
+        } else {
+            this._startSequence = this._contextState.prevSequence;
+        }
     }
         /**
      * Resolve the size of the layout-node from the renderable itsself.
