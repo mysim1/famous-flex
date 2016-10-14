@@ -199,8 +199,8 @@ define(function(require, exports, module) {
         };
         var node = this._first;
         while (node) {
-            var modified = node._specModified;
             var spec = node.getSpec();
+            var modified = node._specModified;
             if (spec.removed) {
 
                 // Destroy node
@@ -411,6 +411,14 @@ define(function(require, exports, module) {
         }
     }
 
+    LayoutNodeManager.prototype.getLastRenderedNodeIndex = function() {
+        return this._contextState.nextSequence ? this._contextState.nextSequence.getIndex() : Infinity;
+    };
+
+    LayoutNodeManager.prototype.getFirstRenderedNodeIndex = function() {
+        return this._contextState.prevSequence ? this._contextState.prevSequence.getIndex() : 0;
+    };
+
     LayoutNodeManager.prototype.isNodeInCurrentBuild = function(node) {
         return !!this._nodeIdInCurrentBuild.get(node);
     };
@@ -600,11 +608,8 @@ define(function(require, exports, module) {
             this._contextState.prevSequence = this._contextState.prevSequence.getPrevious();
         }
 
-        if(!this._contextState.firstRenderNode){
-            this._contextState.firstRenderNode = renderNode;
-        }
 
-        // this._contextState.firstRenderNode = renderNode;
+        this._contextState.firstRenderNode = renderNode;
         return {
             renderNode: renderNode,
             viewSequence: prevSequence,
