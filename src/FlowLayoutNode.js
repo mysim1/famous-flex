@@ -226,6 +226,11 @@ define(function (require, exports, module) {
         ];
     }
 
+    FlowLayoutNode.prototype.getTranslate = function () {
+        var translate =this._properties.translate.endState;
+        return [translate.x, translate.y, translate.z];
+    };
+
     /**
      * Creates the render-spec
      */
@@ -241,6 +246,7 @@ define(function (require, exports, module) {
                 this._lockTransitionable.set(1, options, callback);
             }
             this._releaseLock = undefined;
+
         }
 
 
@@ -267,8 +273,9 @@ define(function (require, exports, module) {
             this._spec.removed = !this._invalidated;
             return this._spec;
         }
+        var lockValue = this._lockTransitionable.get();
         this._initial = false;
-        this._specModified = !endStateReached;
+        this._specModified = !endStateReached || this._lockTransitionable.isActive();
         this._spec.removed = false;
 
         // Step physics engine when not sleeping
@@ -279,7 +286,7 @@ define(function (require, exports, module) {
         // Build fresh spec
         var spec = this._spec;
         var precision = this.options.particleRounding;
-        var lockValue = this._lockTransitionable.get();
+
 
         // opacity
         var prop = this._properties.opacity;
@@ -529,10 +536,6 @@ define(function (require, exports, module) {
     }
 
 
-    FlowLayoutNode.prototype.getTranslate = function () {
-        var translate =this._properties.translate.endState;
-        return [translate.x, translate.y, translate.z];
-    }
     /**
      * context.set(..)
      */
@@ -553,6 +556,7 @@ define(function (require, exports, module) {
         if (this._insertSpec && this._insertSpec.opacity !== undefined) {
             _setPropertyValue.call(this, prop, 'opacity', [this._insertSpec.opacity * value, 0], DEFAULT.opacity2D, set.transition);
         }
+        var prop = this._properties.opacity;
         _setPropertyValue.call(this, prop, 'opacity', [value, 0], DEFAULT.opacity2D, set.transition);
 
 
@@ -563,6 +567,7 @@ define(function (require, exports, module) {
             var initial = this._insertSpec.align;
             _setPropertyValue.call(this, prop, 'align', initial, DEFAULT.align, set.transition);
         }
+        prop = this._properties.align;
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'align', value, DEFAULT.align, set.transition);
         }
@@ -574,11 +579,13 @@ define(function (require, exports, module) {
             var initial = this._insertSpec.origin;
             _setPropertyValue.call(this, prop, 'origin', initial, DEFAULT.origin, set.transition);
         }
+        prop = this._properties.origin;
         if (value || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'origin', value, DEFAULT.origin, set.transition);
         }
 
         // set size
+        prop = this._properties.size;
         if (this._insertSpec && this._insertSpec.size) {
             var initial = this._insertSpec.size;
             _setPropertyValue.call(this, prop, 'size', initial, defaultSize, set.transition);
@@ -609,6 +616,7 @@ define(function (require, exports, module) {
             var initial = this._insertSpec.scale;
             _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale, set.transition);
         }
+        prop = this._properties.scale;
         if (value !== undefined || (prop && prop.init)){
             _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale, set.transition);
         }
@@ -621,7 +629,7 @@ define(function (require, exports, module) {
             var initial = this._insertSpec.rotate;
             _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate, set.transition);
         }
-
+        prop = this._properties.rotate;
         if(value !== undefined || (prop && prop.init)){
             _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate, set.transition);
         }
