@@ -132,6 +132,7 @@ define(function(require, exports, module) {
         context.size[1] = contextData.size[1];
         context.scrollLength = contextData.scrollLength;
         context.direction = contextData.direction;
+        context.scrollTopHeight = contextData.scrollTopHeight;
         context.reverse = contextData.reverse;
         context.alignment = contextData.reverse ? 1 : 0;
         context.scrollOffset = contextData.scrollOffset || 0;
@@ -161,6 +162,10 @@ define(function(require, exports, module) {
             // Move to next node
             node = node._next;
         }
+    };
+
+    LayoutNodeManager.prototype.getPrevSequence= function() {
+        return this._contextState.prevSequence;
     };
 
     LayoutNodeManager.prototype.getLastRenderNodeInSequence = function() {
@@ -608,8 +613,10 @@ define(function(require, exports, module) {
             this._contextState.prevSequence = this._contextState.prevSequence.getPrevious();
         }
 
-
         this._contextState.firstRenderNode = renderNode;
+        if(!this._contextState.lastRenderNode){
+            this._contextState.lastRenderNode = renderNode;
+        }
         return {
             renderNode: renderNode,
             viewSequence: prevSequence,
