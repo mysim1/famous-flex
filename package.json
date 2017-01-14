@@ -42,11 +42,6 @@
       "url": "https://github.com/IjzerenHein/famous-flex/blob/master/LICENSE"
     }
   ],
-  "peerDependencies": {
-    "events": "jspm-nodelibs-events@^0.2.0",
-    "path": "jspm-nodelibs-path@^0.2.0",
-    "process": "jspm-nodelibs-process@^0.2.0"
-  },
   "readmeFilename": "README.md",
   "bugs": {
     "url": "https://github.com/IjzerenHein/famous-flex/issues"
