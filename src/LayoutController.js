@@ -29,6 +29,7 @@ define(function (require, exports, module) {
 
     // import dependencies
     var NativeScrollGroup = require('famous/core/NativeScrollGroup');
+    var Group = require('famous/core/Group');
     var Utility = require('famous/utilities/Utility');
     var Entity = require('famous/core/Entity');
     var ViewSequence = require('famous/core/ViewSequence');
@@ -97,6 +98,9 @@ define(function (require, exports, module) {
             // Create groupt for faster rendering
             this.group = new NativeScrollGroup();
             this.group.add({render: this._innerRender.bind(this)});
+        } else if (options.group){
+            this.group = new Group();
+            this.group.add({render: this._innerRender.bind(this)});
         }
 
         // Layout
@@ -120,7 +124,7 @@ define(function (require, exports, module) {
         if (nodeManager) {
             this._nodes = nodeManager;
         }
-            //TODO: Make some solution that does flow not just on the view but on the renderables
+        //TODO: Make some solution that does flow not just on the view but on the renderables
         else if (options && options.flow) {
             this._nodes = new LayoutNodeManager(FlowLayoutNode, _initFlowLayoutNode.bind(this), options.partialFlow);
         }
@@ -364,9 +368,9 @@ define(function (require, exports, module) {
             var helperName = Object.keys(layout)[0];
             var Helper = LayoutUtility.getRegisteredHelper(helperName);
             this._layout._function = Helper ? function (context, options2) {
-                var helper = new Helper(context, options2);
-                helper.parse(layout[helperName]);
-            } : undefined;
+                    var helper = new Helper(context, options2);
+                    helper.parse(layout[helperName]);
+                } : undefined;
         }
         else {
             this._layout._function = undefined;
@@ -1064,7 +1068,7 @@ define(function (require, exports, module) {
         this._commitOutput.opacity = opacity;
         this._commitOutput.transform = transform;
 
-        if(this.options.nativeScroll){
+        if(this.group){
             // Return the spec
             return {
                 transform: transform,
@@ -1081,7 +1085,7 @@ define(function (require, exports, module) {
         return this._commitOutput.target;
     };
 
-        /**
+    /**
      * Called whenever the layout-controller is removed from the render-tree.
      *
      * @private
