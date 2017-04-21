@@ -193,6 +193,8 @@ define(function(require, exports, module) {
                 this.subscribe(this.container);
                 EventHandler.setInputHandler(this.container, this);
                 EventHandler.setOutputHandler(this.container, this);
+            } else {
+                this.container.pipe(this);
             }
         }
     }
