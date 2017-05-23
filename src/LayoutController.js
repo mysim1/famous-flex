@@ -927,7 +927,7 @@ define(function (require, exports, module) {
         }
 
         // When the size or layout function has changed, reflow the layout
-        if ((opacity || !this._commitOutput.target) && (
+        if ((
                 sizeChanged ||
                 this._isDirty ||
                 this._nodes._trueSizeRequested ||
@@ -1069,10 +1069,6 @@ define(function (require, exports, module) {
         }
 
         this._commitOutput.hide = !opacity;
-        if(!opacity){
-            this._commitOutput.target = [];
-        }
-
 
         this._commitOutput.size = size;
         this._commitOutput.opacity = opacity;
