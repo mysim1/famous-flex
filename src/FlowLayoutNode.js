@@ -543,6 +543,8 @@ define(function (require, exports, module) {
         this.scrollLength = set.scrollLength;
         this._specModified = true;
 
+        this._spec.hide = set.hide;
+
         // opacity
         var prop = this._properties.opacity;
         var value = set.opacity !== undefined ? set.opacity : 1;

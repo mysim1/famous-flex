@@ -13,7 +13,7 @@
  *
  * @module
  */
-define(function(require, exports, module) {
+define(function (require, exports, module) {
 
     // import dependencies
     var Transform = require('famous/core/Transform');
@@ -31,14 +31,12 @@ define(function(require, exports, module) {
         this._specModified = true;
         this._invalidated = false;
         this._removing = false;
-        //this.scrollLength = undefined;
-        //this.trueSizeRequested = false;
     }
 
     /**
      * Called to update the underlying render-node
      */
-    LayoutNode.prototype.setRenderNode = function(renderNode) {
+    LayoutNode.prototype.setRenderNode = function (renderNode) {
         this.renderNode = renderNode;
         this._spec.renderNode = renderNode;
     };
@@ -46,14 +44,14 @@ define(function(require, exports, module) {
     /**
      * Called to update the options for the node
      */
-    LayoutNode.prototype.setOptions = function(options) {
+    LayoutNode.prototype.setOptions = function (options) {
         // override to implement
     };
 
     /**
      * Called when the node is destroyed
      */
-    LayoutNode.prototype.destroy = function() {
+    LayoutNode.prototype.destroy = function () {
         this.renderNode = undefined;
         this._spec.renderNode = undefined;
         this._viewSequence = undefined;
@@ -63,7 +61,7 @@ define(function(require, exports, module) {
      * Reset the end-state. This function is called on all layout-nodes prior to
      * calling the layout-function. So that the layout-function starts with a clean slate.
      */
-    LayoutNode.prototype.reset = function() {
+    LayoutNode.prototype.reset = function () {
         this._invalidated = false;
         this.trueSizeRequested = false;
     };
@@ -73,7 +71,7 @@ define(function(require, exports, module) {
      *
      * @param {Object} spec
      */
-    LayoutNode.prototype.setSpec = function(spec) {
+    LayoutNode.prototype.setSpec = function (spec) {
         this._specModified = true;
         if (spec.align) {
             if (!spec.align) {
@@ -105,6 +103,9 @@ define(function(require, exports, module) {
         else {
             this._spec.size = undefined;
         }
+
+        this._spec.hide = spec.hide;
+
         if (spec.transform) {
             if (!spec.transform) {
                 this._spec.transform = spec.transform.slice(0);
@@ -126,7 +127,7 @@ define(function(require, exports, module) {
      *
      * @param {Object} set
      */
-    LayoutNode.prototype.set = function(set, size) {
+    LayoutNode.prototype.set = function (set, size) {
         this._invalidated = true;
         this._specModified = true;
         this._removing = false;
@@ -163,6 +164,8 @@ define(function(require, exports, module) {
             spec.align = undefined;
         }
 
+        this._spec.hide = spec.hide;
+
         if (set.skew || set.rotate || set.scale) {
             this._spec.transform = Transform.build({
                 translate: set.translate || [0, 0, 0],
@@ -183,7 +186,7 @@ define(function(require, exports, module) {
     /**
      * Creates the render-spec
      */
-    LayoutNode.prototype.getSpec = function() {
+    LayoutNode.prototype.getSpec = function () {
         this._specModified = false;
         this._spec.removed = !this._invalidated;
         return this._spec;
@@ -192,7 +195,7 @@ define(function(require, exports, module) {
     /**
      * Marks the node for removal
      */
-    LayoutNode.prototype.remove = function(removeSpec) {
+    LayoutNode.prototype.remove = function (removeSpec) {
         this._removing = true;
     };
 
