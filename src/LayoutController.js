@@ -1068,8 +1068,6 @@ define(function (require, exports, module) {
             transform = Transform.multiply(transform, this.globalTransform);
         }
 
-        this._commitOutput.hide = !opacity;
-
         this._commitOutput.size = size;
         this._commitOutput.opacity = opacity;
         this._commitOutput.transform = transform;
