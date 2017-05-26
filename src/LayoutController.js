@@ -913,6 +913,10 @@ define(function (require, exports, module) {
         var size = context.size;
         var opacity = context.opacity;
 
+        if(this.group && this._hiddenID && !this.group._hiddenID){
+            this.group._hiddenID = this._hiddenID;
+        }
+
         // Reset the flow-state when requested
         if (this._resetFlowState) {
             this._resetFlowState = false;
