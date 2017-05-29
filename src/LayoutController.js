@@ -103,6 +103,10 @@ define(function (require, exports, module) {
             this.group.add({render: this._innerRender.bind(this)});
         }
 
+        if(this.group){
+            this.group._hiddenID = options._hiddenID;
+        }
+
         // Layout
         this._layout = {
             //function: undefined,
@@ -913,9 +917,6 @@ define(function (require, exports, module) {
         var size = context.size;
         var opacity = context.opacity;
 
-        if(this.group && this._hiddenID && !this.group._hiddenID){
-            this.group._hiddenID = this._hiddenID;
-        }
 
         // Reset the flow-state when requested
         if (this._resetFlowState) {
