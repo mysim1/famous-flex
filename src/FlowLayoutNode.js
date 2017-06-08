@@ -18,6 +18,7 @@ define(function (require, exports, module) {
     // import dependencies
     var OptionsManager = require('famous/core/OptionsManager');
     var Transform = require('famous/core/Transform');
+    var Engine = require('famous/core/Engine');
     var Vector = require('famous/math/Vector');
     var Particle = require('famous/physics/bodies/Particle');
     var Spring = require('famous/physics/forces/Spring');
@@ -285,9 +286,17 @@ define(function (require, exports, module) {
         // opacity
         var prop = this._properties.opacity;
         if (prop && prop.init) {
-            // spec.opacity = prop.enabled[0] ? (Math.round(Math.max(0, Math.min(1, prop.curState.x)) / precision) * precision) : prop.endState.x;
-            spec.opacity = prop.enabled[0] ? Math.max(0,Math.min(1,(Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / precision) * precision))) : prop.endState.x;
-            spec.endState.opacity = prop.endState.x;
+            if (!Engine.shouldPropertyAnimate('opacity')) {
+                prop.noAnimation = true;
+                prop.curState.x = prop.endState.x;
+            }
+
+            if (prop.noAnimation) {
+                spec.opacity = prop.endState.x;
+            } else {
+                spec.opacity = prop.enabled[0] ? Math.max(0, Math.min(1, (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / precision) * precision))) : prop.endState.x;
+                spec.endState.opacity = prop.endState.x;
+            }
         }
         else {
             spec.opacity = undefined;
@@ -297,12 +306,25 @@ define(function (require, exports, module) {
         // size
         prop = this._properties.size;
         if (prop && prop.init) {
-            spec.size = spec.size || [0, 0];
-            spec.size[0] = prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / 0.1) * 0.1) : prop.endState.x;
-            spec.size[1] = prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / 0.1) * 0.1) : prop.endState.y;
-            spec.endState.size = spec.endState.size || [0, 0];
-            spec.endState.size[0] = prop.endState.x;
-            spec.endState.size[1] = prop.endState.y;
+
+            if (!Engine.shouldPropertyAnimate('size')) {
+                prop.noAnimation = true;
+                prop.curState.x = prop.endState.x;
+                prop.curState.y = prop.endState.y;
+            }
+
+            if (prop.noAnimation) {
+                spec.size = [prop.endState.x, prop.endState.y] || [0, 0];
+            } else {
+                spec.size = spec.size || [0, 0];
+                spec.size[0] = prop.enabled[0] ? (Math.round((prop.curState.x + ((prop.endState.x - prop.curState.x) * lockValue)) / 0.1) * 0.1) : prop.endState.x;
+                spec.size[1] = prop.enabled[1] ? (Math.round((prop.curState.y + ((prop.endState.y - prop.curState.y) * lockValue)) / 0.1) * 0.1) : prop.endState.y;
+
+                spec.endState.size = spec.endState.size || [0, 0];
+                spec.endState.size[0] = prop.endState.x;
+                spec.endState.size[1] = prop.endState.y;
+            }
+
         }
         else {
             spec.size = undefined;
