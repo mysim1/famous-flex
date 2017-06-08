@@ -47,9 +47,9 @@ define(function (require, exports, module) {
 
         if (!this._pe) {
             this._pe = new PhysicsEngine();
-            this._pe.on('end', function() {
-                if(!this._shouldDoSingleTween){
-                    this._completeFlowCallback({reason: 'flowEnd'});
+            this._pe.on('end', function () {
+                if (!this._shouldDoSingleTween) {
+                    this._completeFlowCallback({ reason: 'flowEnd' });
                 }
             }.bind(this));
             this._pe.sleep();
@@ -82,6 +82,7 @@ define(function (require, exports, module) {
         /* Assume non-existance by default */
         this._exists = false;
     }
+
     FlowLayoutNode.prototype = Object.create(LayoutNode.prototype);
     FlowLayoutNode.prototype.constructor = FlowLayoutNode;
 
@@ -201,13 +202,13 @@ define(function (require, exports, module) {
      * the renderables can smoothly transition to their new positions.
      */
     FlowLayoutNode.prototype.releaseLock = function (enable, options, callback) {
-        if(!this._singleTween){
+        if (!this._singleTween) {
             if (!options) {
                 options = {
                     duration: this.options.spring.period || 1000
                 }
             }
-            this._releaseLock = {enable: enable, options: options, callback: callback};
+            this._releaseLock = { enable: enable, options: options, callback: callback };
         }
 
     };
@@ -436,8 +437,8 @@ define(function (require, exports, module) {
                 }
                 else if (newPropsAreDifferent) {
                     this._shouldDoSingleTween = false;
-                    if(this._singleTween){
-                        if(!this._disableSingleTween){
+                    if (this._singleTween) {
+                        if (!this._disableSingleTween) {
                             this._disableSingleTween = {}
                         }
                         this._disableSingleTween[propName] = true;
@@ -480,7 +481,7 @@ define(function (require, exports, module) {
                 prop.endState.set(endState);
             }
             if (!this._initial && !immediate) {
-                if(wasSleeping && transition && !this._singleTween){
+                if (wasSleeping && transition && !this._singleTween) {
                     this._shouldDoSingleTween = true;
                     this._pe.sleep()
                 } else {
@@ -503,6 +504,7 @@ define(function (require, exports, module) {
             prop.init = true;
             prop.invalidated = true;
         }
+        prop.noAnimation = false;
     }
 
 
@@ -522,6 +524,7 @@ define(function (require, exports, module) {
             return (array.length <= index || array[index] === true || Math.abs(array[index] - vector[dimension]) < 0.01);
         });
     }
+
     function _assignVectorFromArray(vector, array) {
         vector.x = array[0] === true ? vector.x : array[0];
         vector.y = (array.length > 1) ? array[1] === true ? vector.y : array[1] : 0;
@@ -607,7 +610,7 @@ define(function (require, exports, module) {
             var initial = this._insertSpec.scale;
             _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale, set.transition);
         }
-        if (value !== undefined || (prop && prop.init)){
+        if (value !== undefined || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale, set.transition);
         }
 
@@ -620,7 +623,7 @@ define(function (require, exports, module) {
             _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate, set.transition);
         }
 
-        if(value !== undefined || (prop && prop.init)){
+        if (value !== undefined || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate, set.transition);
         }
 
@@ -632,44 +635,48 @@ define(function (require, exports, module) {
             var initial = this._insertSpec.skew;
             _setPropertyValue.call(this, prop, 'skew', initial, DEFAULT.skew, set.transition);
         }
-        if(value !== undefined || (prop && prop.init)) {
+        if (value !== undefined || (prop && prop.init)) {
             _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew, set.transition);
         }
 
-        if(set.callback){
-            if(this._currentCallback && this._currentCallback !== set.callback){
+        if (set.callback) {
+            if (this._currentCallback && this._currentCallback !== set.callback) {
                 /* Interrupt */
-                this._currentCallback({reason: 'flowInterrupted'});
+                this._currentCallback({ reason: 'flowInterrupted' });
             }
             this._currentCallback = set.callback;
         }
 
 
-        if(this._shouldDoSingleTween){
+        if (this._shouldDoSingleTween) {
             var givenTransformation = typeof set.transition === 'function' ? set : set.transition;
             /* Reset variable */
             this._shouldDoSingleTween = false;
-            this._singleTweenProperties = givenTransformation || {curve: function linear(x){ return x; }, duration: 1000};
-            this.releaseLock(true, this._singleTweenProperties, function() {
-                if(this._singleTween){
+            this._singleTweenProperties = givenTransformation || {
+                    curve: function linear(x) {
+                        return x;
+                    }, duration: 1000
+                };
+            this.releaseLock(true, this._singleTweenProperties, function () {
+                if (this._singleTween) {
                     this._singleTween = false;
-                    for(var propName in this._properties){
+                    for (var propName in this._properties) {
                         var prop = this._properties[propName];
-                        if(prop && prop.init){
+                        if (prop && prop.init) {
                             prop.curState.x = prop.endState.x;
                             prop.curState.y = prop.endState.y;
                             prop.curState.z = prop.endState.z;
                         }
                     }
-                    this._completeFlowCallback({reason: 'flowEnd'});
+                    this._completeFlowCallback({ reason: 'flowEnd' });
                 }
             }.bind(this));
             this._singleTween = true;
-        } else if(this._disableSingleTween){
+        } else if (this._disableSingleTween) {
             /* This will have FlowLayoutNode.set() called again the next render tick, at which point _shouldDoSingleTween will have been set to true again. */
             this._singleTween = false;
-            for(var otherPropName in this._properties){
-                if(!(otherPropName in this._disableSingleTween)){
+            for (var otherPropName in this._properties) {
+                if (!(otherPropName in this._disableSingleTween)) {
                     this.interruptPropertyTween(otherPropName);
                 }
             }
@@ -677,28 +684,30 @@ define(function (require, exports, module) {
 
 
             this.releaseLock();
-        } else if(this._pe.isSleeping() && !this._singleTween){
+        } else if (this._pe.isSleeping() && !this._singleTween) {
             /* The props of the renderable have not changed, yet it was reflown. No tweening will be performed. */
-            this._completeFlowCallback({reason: 'flowSkipped'});
+            this._completeFlowCallback({ reason: 'flowSkipped' });
         }
 
         this._insertSpec = undefined;
     };
 
 
-    FlowLayoutNode.prototype.interruptPropertyTween = function(propertyName) {
+    FlowLayoutNode.prototype.interruptPropertyTween = function (propertyName) {
         var lockVar = this._lockTransitionable.get();
         //Complex code for calculating the velocity of the current ongoing animation
         var velocity = this._lockTransitionable.velocity;
-        var curve = this._singleTweenProperties.curve || function linear(x) {return x};
+        var curve = this._singleTweenProperties.curve || function linear(x) {
+                return x
+            };
         var duration = this._singleTweenProperties.duration;
         var epsilon = 1e-7;
         var curveDelta = (curve(lockVar) - curve(lockVar - epsilon)) / epsilon;
         var adjustedProp = this._properties[propertyName];
-        ['x','y','z'].forEach(function(dimension) {
+        ['x', 'y', 'z'].forEach(function (dimension) {
             var distanceToTravel = (adjustedProp.endState[dimension] - adjustedProp.curState[dimension]);
             var distanceTraveled = distanceToTravel * lockVar;
-            if(!duration){
+            if (!duration) {
                 adjustedProp.curState[dimension] = adjustedProp.endState[dimension];
             } else {
                 adjustedProp.velocity[dimension] = -1 * curveDelta * (adjustedProp.curState[dimension] - adjustedProp.endState[dimension]) / duration;
@@ -707,8 +716,8 @@ define(function (require, exports, module) {
         });
     };
 
-    FlowLayoutNode.prototype._completeFlowCallback = function(options) {
-        if(this._currentCallback) {
+    FlowLayoutNode.prototype._completeFlowCallback = function (options) {
+        if (this._currentCallback) {
             this._currentCallback(options);
             delete this._currentCallback;
         }
