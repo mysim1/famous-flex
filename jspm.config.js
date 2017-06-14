@@ -13,11 +13,6 @@ SystemJS.config({
       "famous-flex/": "src/"
     }
   },
-  devConfig: {
-    "map": {
-      "plugin-babel": "npm:systemjs-plugin-babel@0.0.14"
-    }
-  },
   transpiler: "plugin-babel",
   packages: {
     "famous-flex": {
@@ -39,9 +34,9 @@ SystemJS.config({
   ],
   map: {
     "es6-map": "npm:es6-map@0.1.4",
-    "events": "github:jspm/nodelibs-events@0.2.0-alpha",
-    "path": "github:jspm/nodelibs-path@0.2.0-alpha",
-    "process": "github:jspm/nodelibs-process@0.2.0-alpha"
+    "events": "npm:jspm-nodelibs-events@0.2.0",
+    "path": "npm:jspm-nodelibs-path@0.2.1",
+    "process": "npm:jspm-nodelibs-process@0.2.0"
   },
   packages: {
     "npm:es6-map@0.1.4": {
@@ -52,6 +47,21 @@ SystemJS.config({
         "es6-symbol": "npm:es6-symbol@3.1.0",
         "event-emitter": "npm:event-emitter@0.3.4",
         "es6-iterator": "npm:es6-iterator@2.0.0"
+      }
+    },
+    "npm:es6-set@0.1.4": {
+      "map": {
+        "d": "npm:d@0.1.1",
+        "es5-ext": "npm:es5-ext@0.10.12",
+        "es6-iterator": "npm:es6-iterator@2.0.0",
+        "es6-symbol": "npm:es6-symbol@3.1.0",
+        "event-emitter": "npm:event-emitter@0.3.4"
+      }
+    },
+    "npm:event-emitter@0.3.4": {
+      "map": {
+        "es5-ext": "npm:es5-ext@0.10.12",
+        "d": "npm:d@0.1.1"
       }
     },
     "npm:d@0.1.1": {
@@ -65,25 +75,10 @@ SystemJS.config({
         "es6-symbol": "npm:es6-symbol@3.1.0"
       }
     },
-    "npm:es6-set@0.1.4": {
-      "map": {
-        "d": "npm:d@0.1.1",
-        "es5-ext": "npm:es5-ext@0.10.12",
-        "es6-iterator": "npm:es6-iterator@2.0.0",
-        "es6-symbol": "npm:es6-symbol@3.1.0",
-        "event-emitter": "npm:event-emitter@0.3.4"
-      }
-    },
     "npm:es6-symbol@3.1.0": {
       "map": {
         "d": "npm:d@0.1.1",
         "es5-ext": "npm:es5-ext@0.10.12"
-      }
-    },
-    "npm:event-emitter@0.3.4": {
-      "map": {
-        "es5-ext": "npm:es5-ext@0.10.12",
-        "d": "npm:d@0.1.1"
       }
     },
     "npm:es6-iterator@2.0.0": {

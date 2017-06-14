@@ -93,10 +93,10 @@ define(function (require, exports, module) {
         this._eventOutput = new EventHandler();
         EventHandler.setOutputHandler(this, this._eventOutput);
 
-        if(options.nativeScroll){
+        if (options.nativeScroll) {
             // Create groupt for faster rendering
             this.group = new NativeScrollGroup();
-            this.group.add({render: this._innerRender.bind(this)});
+            this.group.add({ render: this._innerRender.bind(this) });
         }
 
         // Layout
@@ -120,7 +120,7 @@ define(function (require, exports, module) {
         if (nodeManager) {
             this._nodes = nodeManager;
         }
-            //TODO: Make some solution that does flow not just on the view but on the renderables
+        //TODO: Make some solution that does flow not just on the view but on the renderables
         else if (options && options.flow) {
             this._nodes = new LayoutNodeManager(FlowLayoutNode, _initFlowLayoutNode.bind(this), options.partialFlow);
         }
@@ -603,7 +603,7 @@ define(function (require, exports, module) {
         // When a custom insert-spec was specified, store that in the layout-node
         if (insertSpec) {
             var newNode = this._nodes.createNode(renderable, insertSpec);
-            newNode.executeInsertSpec();
+            newNode.executeInsertSpec && newNode.executeInsertSpec();
             this._nodes.insertNode(newNode);
         }
 
@@ -917,13 +917,23 @@ define(function (require, exports, module) {
         }
 
         this._isDisplaying = true;
+        var sizeChanged = size[0] !== this._contextSizeCache[0] ||
+            size[1] !== this._contextSizeCache[1];
+        if (sizeChanged) {
+            this._eventOutput.emit('sizeChanged', {
+                oldSize: this._contextSizeCache,
+                size: size,
+            });
+        }
 
         // When the size or layout function has changed, reflow the layout
-        if (size[0] !== this._contextSizeCache[0] ||
-            size[1] !== this._contextSizeCache[1] ||
-            this._isDirty ||
-            this._nodes._trueSizeRequested ||
-            this.options.alwaysLayout) {
+        if ((
+                sizeChanged ||
+                this._isDirty ||
+                this._nodes._trueSizeRequested ||
+                this.options.alwaysLayout
+            )
+        ) {
 
             // Emit start event
             var eventData = {
@@ -953,7 +963,7 @@ define(function (require, exports, module) {
                 if (lock !== undefined) {
                     var node = this._nodes.getStartEnumNode();
                     while (node) {
-                        if(node.releaseLock){
+                        if (node.releaseLock) {
                             node.releaseLock(lock);
                         }
                         node = node._next;
@@ -1050,21 +1060,19 @@ define(function (require, exports, module) {
         }
 
 
-
         // Translate dependent on origin
         if (origin && ((origin[0] !== 0) || (origin[1] !== 0))) {
             transform = Transform.moveThen([-size[0] * origin[0], -size[1] * origin[1], 0], transform);
         }
-        if(this.globalTransform){
+        if (this.globalTransform) {
             transform = Transform.multiply(transform, this.globalTransform);
         }
-
 
         this._commitOutput.size = size;
         this._commitOutput.opacity = opacity;
         this._commitOutput.transform = transform;
 
-        if(this.options.nativeScroll){
+        if (this.options.nativeScroll) {
             // Return the spec
             return {
                 transform: transform,
@@ -1081,7 +1089,7 @@ define(function (require, exports, module) {
         return this._commitOutput.target;
     };
 
-        /**
+    /**
      * Called whenever the layout-controller is removed from the render-tree.
      *
      * @private

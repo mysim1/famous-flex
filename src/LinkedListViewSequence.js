@@ -165,6 +165,18 @@ define(function(require, exports, module) {
         return -1;
     };
 
+    LinkedListViewSequence.prototype.toArray = function() {
+        var sequence = this._.head;
+        var index = 0;
+        var arrayConversion = new Array(this.getLength());
+        while (sequence) {
+            arrayConversion[index] = sequence._value;
+            index++;
+            sequence = sequence._next;
+        }
+        return arrayConversion;
+    };
+
     /**
      * Finds the view-sequence item at the given index.
      *
