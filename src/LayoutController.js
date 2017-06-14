@@ -603,7 +603,7 @@ define(function (require, exports, module) {
         // When a custom insert-spec was specified, store that in the layout-node
         if (insertSpec) {
             var newNode = this._nodes.createNode(renderable, insertSpec);
-            newNode.executeInsertSpec();
+            newNode.executeInsertSpec && newNode.executeInsertSpec();
             this._nodes.insertNode(newNode);
         }
 
