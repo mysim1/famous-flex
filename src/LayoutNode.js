@@ -164,7 +164,7 @@ define(function (require, exports, module) {
             spec.align = undefined;
         }
 
-        this._spec.hide = spec.hide;
+        this._spec.hide = set.hide;
 
         if (set.skew || set.rotate || set.scale) {
             this._spec.transform = Transform.build({
