@@ -621,8 +621,8 @@ define(function(require, exports, module) {
     /**
      * Resolve id into a context-node.
      */
-     function _contextGet(contextNodeOrId) {
-        if (this._nodesById && ((contextNodeOrId instanceof String) || (typeof contextNodeOrId === 'string'))) {
+    function _contextGet(contextNodeOrId) {
+        if (this._nodesById && ( typeof contextNodeOrId === 'string' || typeof contextNodeOrId === 'number')) {
             var renderNode = this._nodesById[contextNodeOrId];
             if (!renderNode) {
                 return undefined;
