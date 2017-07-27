@@ -656,7 +656,7 @@ define(function(require, exports, module) {
      */
     function _contextSet(contextNodeOrId, set) {
         var contextNode = this._nodesById ? _contextGet.call(this, contextNodeOrId) : contextNodeOrId;
-        if (contextNode) {
+        if (contextNode !== undefined) {
             /* Keeps track of which nodes that have been set */
             this._nodeIdInCurrentBuild.set(contextNode.renderNode, true);
             var node = contextNode.node;
