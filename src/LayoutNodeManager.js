@@ -628,8 +628,8 @@ define(function(require, exports, module) {
     /**
      * Resolve id into a context-node.
      */
-     function _contextGet(contextNodeOrId) {
-        if (this._nodesById && ((contextNodeOrId instanceof String) || (typeof contextNodeOrId === 'string'))) {
+    function _contextGet(contextNodeOrId) {
+        if (this._nodesById && ( typeof contextNodeOrId === 'string' || typeof contextNodeOrId === 'number')) {
             var renderNode = this._nodesById[contextNodeOrId];
             if (!renderNode) {
                 return undefined;
@@ -663,7 +663,7 @@ define(function(require, exports, module) {
      */
     function _contextSet(contextNodeOrId, set) {
         var contextNode = this._nodesById ? _contextGet.call(this, contextNodeOrId) : contextNodeOrId;
-        if (contextNode) {
+        if (contextNode !== undefined) {
             /* Keeps track of which nodes that have been set */
             this._nodeIdInCurrentBuild.set(contextNode.renderNode, true);
             var node = contextNode.node;
