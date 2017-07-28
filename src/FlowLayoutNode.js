@@ -276,6 +276,7 @@ define(function (require, exports, module) {
             return this._spec;
         }
         var lockValue = this._lockTransitionable.get();
+        this._lastObservedLockValue = lockValue;
         this._initial = false;
         this._specModified = !endStateReached || this._lockTransitionable.isActive();
         this._spec.removed = false;
@@ -426,6 +427,10 @@ define(function (require, exports, module) {
         }
         return this._spec;
     };
+
+    FlowLayoutNode.prototype.stoppedFlowing = function() {
+        return this._lockTransitionable.get() === 1 && !this._singleTween && this._pe.isSleeping() && !this._insertSpec;
+    }
 
     /**
      * Helper function to set the property of a node (e.g. opacity, translate, etc..)

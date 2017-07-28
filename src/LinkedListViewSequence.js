@@ -48,8 +48,6 @@ define(function(require, exports, module) {
 
     LinkedListViewSequence.Backing = function Backing() {
         this.length = 0;
-        //this.head = undefined;
-        //this.tail = undefined;
     };
 
     /*LinkedListViewSequence.prototype.verifyIntegrity = function() {

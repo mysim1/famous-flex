@@ -246,7 +246,8 @@ define(function(require, exports, module) {
             period: 350
         },
         scrollSync: {
-            scale: 0.2
+            scale: 0.2,
+            preventDefault: false
         },
         overscroll: true,
         paginated: false,

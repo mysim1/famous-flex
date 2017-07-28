@@ -194,12 +194,13 @@ define(function(require, exports, module) {
      * Builds the render-spec and destroy any layout-nodes that no longer
      * return a render-spec.
      *
-     * @return {Array.Spec} array of Specs
+     * @return {Array<Object>} Object containing array of specs, array of nodes, etc
      */
     LayoutNodeManager.prototype.buildSpecAndDestroyUnrenderedNodes = function(translate) {
-        var specs = [];
+        var specs = [], nodes = [];
         var result = {
             specs: specs,
+            nodes: nodes,
             modified: false
         };
         var node = this._first;
@@ -240,9 +241,10 @@ define(function(require, exports, module) {
                 // Set meta data
                 spec.usesTrueSize = node.usesTrueSize;
                 spec.trueSizeRequested = node.trueSizeRequested;
-
+                spec.target = spec.renderNode.render();
                 // Add node to result output
                 specs.push(spec);
+                nodes.push(node);
                 node = node._next;
             }
         }
