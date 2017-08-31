@@ -55,7 +55,8 @@ define(function(require, exports, module) {
             set: _contextSet.bind(this),
             resolveSize: _contextResolveSize.bind(this),
             moveStartSequence: _moveStartSequence.bind(this),
-            size: [0, 0]
+            size: [0, 0],
+            setCoveredScrollHeight: _setCoveredScrollHeight.bind(this)
             //,cycle: 0
         });
         this._contextState = {
@@ -270,6 +271,14 @@ define(function(require, exports, module) {
         return undefined;
     };
 
+    /**
+     * Inserts a layout-node into the linked-list.
+     *
+     * @param {LayoutNode} node layout-node to insert
+     */
+    LayoutNodeManager.prototype.getCoveredScrollHeight = function() {
+        return this._contextState.coveredScrollHeight;
+    };
     /**
      * Inserts a layout-node into the linked-list.
      *
@@ -626,7 +635,9 @@ define(function(require, exports, module) {
             index: --this._contextState.prevGetIndex
         };
     }
-
+    function _setCoveredScrollHeight(coveredScrollHeight) {
+        this._contextState.coveredScrollHeight = coveredScrollHeight;
+    }
     /**
      * Resolve id into a context-node.
      */
