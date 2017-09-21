@@ -170,10 +170,10 @@ define(function(require, exports, module) {
         this._scroll.springForce.setOptions({ anchor: this._scroll.springEndState });
         if(!options.nativeScroll){
             // Listen to touch events
-            this._eventInput.on('touchstart', _touchStart.bind(this));
-            this._eventInput.on('touchmove', _touchMove.bind(this));
-            this._eventInput.on('touchend', _touchEnd.bind(this));
-            this._eventInput.on('touchcancel', _touchEnd.bind(this));
+            this._eventInput.on('touchstart', _touchStart.bind(this), {axis: this._direction});
+            this._eventInput.on('touchmove', _touchMove.bind(this), {axis: this._direction});
+            this._eventInput.on('touchend', _touchEnd.bind(this), {axis: this._direction});
+            this._eventInput.on('touchcancel', _touchEnd.bind(this), {axis: this._direction});
 
             // Listen to mouse-move events
             this._eventInput.on('mousedown', _mouseDown.bind(this));
