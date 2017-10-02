@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014 - 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -43,10 +42,14 @@
  *
  * @module
  */
-define(function(require, exports, module) {
 
-    // import dependencies
-    var LayoutUtility = require('../LayoutUtility');
+
+import Utility from '../LayoutUtility.js';
+
+// Register the helper
+LayoutUtility.registerHelper('dock', LayoutDockHelper);
+
+export default class LayoutDockHelper {
 
     /**
      * @class
@@ -56,8 +59,8 @@ define(function(require, exports, module) {
      * @param {Number} [options.translateZ] z-index to use when translating objects (default: 0)
      * @alias module:LayoutDockHelper
      */
-    function LayoutDockHelper(context, options) {
-        var size = context.size;
+    constructor(context, options) {
+        let size = context.size;
         this._size = size;
         this._context = context;
         this._options = options;
@@ -65,7 +68,7 @@ define(function(require, exports, module) {
             z: (options && options.translateZ) ? options.translateZ : 0
         };
         if (options && options.margins) {
-            var margins = LayoutUtility.normalizeMargins(options.margins);
+            let margins = LayoutUtility.normalizeMargins(options.margins);
             this._data.left = margins[3];
             this._data.top = margins[0];
             this._data.right = size[0] - margins[1];
@@ -97,10 +100,10 @@ define(function(require, exports, module) {
      *
      * @param {Object} data JSON object
      */
-    LayoutDockHelper.prototype.parse = function(data) {
-        for (var i = 0; i < data.length; i++) {
-            var rule = data[i];
-            var value = (rule.length >= 3) ? rule[2] : undefined;
+    parse(data) {
+        for (let i = 0; i < data.length; i++) {
+            let rule = data[i];
+            let value = (rule.length >= 3) ? rule[2] : undefined;
             if (rule[0] === 'top') {
                 this.top(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
             }
@@ -120,7 +123,7 @@ define(function(require, exports, module) {
                 this.margins(rule[1]);
             }
         }
-    };
+    }
 
     /**
      * Dock the node to the top.
@@ -130,12 +133,12 @@ define(function(require, exports, module) {
      * @param {Number} [z] z-index to use for the node
      * @return {LayoutDockHelper} this
      */
-    LayoutDockHelper.prototype.top = function(node, height, z) {
+    top(node, height, z) {
         if (height instanceof Array) {
             height = height[1];
         }
         if (height === undefined) {
-            var size = this._context.resolveSize(node, [this._data.right - this._data.left, this._data.bottom - this._data.top]);
+            let size = this._context.resolveSize(node, [this._data.right - this._data.left, this._data.bottom - this._data.top]);
             height = size[1];
         }
         this._context.set(node, {
@@ -146,7 +149,7 @@ define(function(require, exports, module) {
         });
         this._data.top += height;
         return this;
-    };
+    }
 
     /**
      * Dock the node to the left
@@ -156,12 +159,12 @@ define(function(require, exports, module) {
      * @param {Number} [z] z-index to use for the node
      * @return {LayoutDockHelper} this
      */
-    LayoutDockHelper.prototype.left = function(node, width, z) {
+    left(node, width, z) {
         if (width instanceof Array) {
             width = width[0];
         }
         if (width === undefined) {
-            var size = this._context.resolveSize(node, [this._data.right - this._data.left, this._data.bottom - this._data.top]);
+            let size = this._context.resolveSize(node, [this._data.right - this._data.left, this._data.bottom - this._data.top]);
             width = size[0];
         }
         this._context.set(node, {
@@ -172,7 +175,7 @@ define(function(require, exports, module) {
         });
         this._data.left += width;
         return this;
-    };
+    }
 
     /**
      * Dock the node to the bottom
@@ -182,12 +185,12 @@ define(function(require, exports, module) {
      * @param {Number} [z] z-index to use for the node
      * @return {LayoutDockHelper} this
      */
-    LayoutDockHelper.prototype.bottom = function(node, height, z) {
+    bottom(node, height, z) {
         if (height instanceof Array) {
             height = height[1];
         }
         if (height === undefined) {
-            var size = this._context.resolveSize(node, [this._data.right - this._data.left, this._data.bottom - this._data.top]);
+            let size = this._context.resolveSize(node, [this._data.right - this._data.left, this._data.bottom - this._data.top]);
             height = size[1];
         }
         this._context.set(node, {
@@ -198,7 +201,7 @@ define(function(require, exports, module) {
         });
         this._data.bottom -= height;
         return this;
-    };
+    }
 
     /**
      * Dock the node to the right.
@@ -208,13 +211,13 @@ define(function(require, exports, module) {
      * @param {Number} [z] z-index to use for the node
      * @return {LayoutDockHelper} this
      */
-    LayoutDockHelper.prototype.right = function(node, width, z) {
+    right(node, width, z) {
         if (width instanceof Array) {
             width = width[0];
         }
         if (node) {
             if (width === undefined) {
-                var size = this._context.resolveSize(node, [this._data.right - this._data.left, this._data.bottom - this._data.top]);
+                let size = this._context.resolveSize(node, [this._data.right - this._data.left, this._data.bottom - this._data.top]);
                 width = size[0];
             }
             this._context.set(node, {
@@ -228,7 +231,7 @@ define(function(require, exports, module) {
             this._data.right -= width;
         }
         return this;
-    };
+    }
 
     /**
      * Fills the node to the remaining content.
@@ -237,13 +240,13 @@ define(function(require, exports, module) {
      * @param {Number} [z] z-index to use for the node
      * @return {LayoutDockHelper} this
      */
-    LayoutDockHelper.prototype.fill = function(node, z) {
+    fill(node, z) {
         this._context.set(node, {
             size: [this._data.right - this._data.left, this._data.bottom - this._data.top],
             translate: [this._data.left, this._data.top, (z === undefined) ? this._data.z : z]
         });
         return this;
-    };
+    }
 
     /**
      * Applies indent margins to the remaining content.
@@ -251,26 +254,21 @@ define(function(require, exports, module) {
      * @param {Number|Array} margins margins shorthand (e.g. '5', [10, 10], [5, 10, 5, 10])
      * @return {LayoutDockHelper} this
      */
-    LayoutDockHelper.prototype.margins = function(margins) {
+    margins(margins) {
         margins = LayoutUtility.normalizeMargins(margins);
         this._data.left += margins[3];
         this._data.top += margins[0];
         this._data.right -= margins[1];
         this._data.bottom -= margins[2];
         return this;
-    };
+    }
 
     /**
      * Gets the current left/right/top/bottom/z bounds used by the dock-helper.
      *
      * @return {Object} `{left: x, right: x, top: x, bottom: x, z: x}`
      */
-    LayoutDockHelper.prototype.get = function() {
+    get() {
         return this._data;
-    };
-
-    // Register the helper
-    LayoutUtility.registerHelper('dock', LayoutDockHelper);
-
-    module.exports = LayoutDockHelper;
-});
+    }
+}
