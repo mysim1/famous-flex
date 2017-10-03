@@ -1,12 +1,12 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
+
 
 /*global console*/
 /*eslint no-console:0 */
@@ -51,10 +51,11 @@
  * ```
  * @module
  */
-define(function(require, exports, module) {
 
-    // import dependencies
-    var EventHandler = require('famous/core/EventHandler');
+import EventHandler from 'famous/core/EventHandler.js';
+
+
+export default class VirtualViewSequence {
 
     /**
      * @class
@@ -64,7 +65,7 @@ define(function(require, exports, module) {
      * @param {Number} [options.index] Index of this node (default: 0).
      * @alias module:VirtualViewSequence
      */
-    function VirtualViewSequence(options) {
+    constructor(options) {
         options = options || {};
         this._ = options._ || new (this.constructor.Backing)(options);
         this.touched = true;
@@ -76,10 +77,10 @@ define(function(require, exports, module) {
         this.value.pipe(this._.eventOutput);
     }
 
-    VirtualViewSequence.Backing = function Backing(options) {
+    static Backing(options) {
         this.factory = options.factory;
         this.eventOutput = new EventHandler();
-    };
+    }
 
     /**
      * Get previous node.
@@ -90,7 +91,7 @@ define(function(require, exports, module) {
      *
      * @return {VirtualViewSequence} previous node.
      */
-    VirtualViewSequence.prototype.getPrevious = function(noCreate) {
+    getPrevious(noCreate) {
         if (this.prev) {
             this.prev.touched = true;
             return this.prev;
@@ -110,7 +111,7 @@ define(function(require, exports, module) {
             next: this
         });
         return this.prev;
-    };
+    }
 
     /**
      * Get next node.
@@ -121,7 +122,7 @@ define(function(require, exports, module) {
      *
      * @return {VirtualViewSequence} next node.
      */
-    VirtualViewSequence.prototype.getNext = function(noCreate) {
+    getNext(noCreate) {
         if (this.next) {
             this.next.touched = true;
             return this.next;
@@ -141,36 +142,36 @@ define(function(require, exports, module) {
             prev: this
         });
         return this.next;
-    };
+    }
 
     /**
      * Get the value of this node.
      *
      * @return {Renderable} surface/view
      */
-    VirtualViewSequence.prototype.get = function() {
+    get() {
         this.touched = true;
         return this.value;
-    };
+    }
 
     /**
      * Get the index of the node.
      *
      * @return {Number} Index of node.
      */
-    VirtualViewSequence.prototype.getIndex = function() {
+    getIndex() {
         this.touched = true;
         return this.index;
-    };
+    }
 
     /**
      * Get human readable string verion of the node.
      *
      * @return {String} node as a human readable string
      */
-    VirtualViewSequence.prototype.toString = function() {
+    toString() {
         return '' + this.index;
-    };
+    }
 
     /**
      * Cleans up any un-accessed nodes since the previous call to `cleanup`.
@@ -182,7 +183,7 @@ define(function(require, exports, module) {
      *
      * @return {VirtualViewSequence} this.
      */
-    VirtualViewSequence.prototype.cleanup = function() {
+    cleanup() {
         var node = this.prev;
         while (node) {
             if (!node.touched) {
@@ -216,67 +217,65 @@ define(function(require, exports, module) {
             node = node.next;
         }
         return this;
-    };
+    }
 
     /**
      * Not supported
      * @private
      */
-    VirtualViewSequence.prototype.unshift = function() {
+    unshift() {
         if (console.error) {
             console.error('VirtualViewSequence.unshift is not supported and should not be called');
         }
-    };
+    }
 
     /**
      * Not supported
      * @private
      */
-    VirtualViewSequence.prototype.push = function() {
+    push() {
         if (console.error) {
             console.error('VirtualViewSequence.push is not supported and should not be called');
         }
-    };
+    }
 
     /**
      * Not supported
      * @private
      */
-    VirtualViewSequence.prototype.splice = function() {
+    splice() {
         if (console.error) {
             console.error('VirtualViewSequence.splice is not supported and should not be called');
         }
-    };
+    }
 
     /**
      * Not supported
      * @private
      */
-    VirtualViewSequence.prototype.swap = function() {
+    swap() {
         if (console.error) {
             console.error('VirtualViewSequence.swap is not supported and should not be called');
         }
-    };
+    }
 
     /**
      * Not supported
      * @private
      */
-    VirtualViewSequence.prototype.insert = function() {
+    insert() {
         if (console.error) {
             console.error('VirtualViewSequence.insert is not supported and should not be called');
         }
-    };
+    }
 
     /**
      * Not supported
      * @private
      */
-    VirtualViewSequence.prototype.remove = function() {
+    remove() {
         if (console.error) {
             console.error('VirtualViewSequence.remove is not supported and should not be called');
         }
-    };
-
-    module.exports = VirtualViewSequence;
-});
+    }
+}

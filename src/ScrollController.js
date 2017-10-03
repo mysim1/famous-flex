@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014 - 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /*global console*/
@@ -35,42 +34,42 @@
  * Inherited from: [LayoutController](./LayoutController.md)
  * @module
  */
-define(function(require, exports, module) {
 
-    // import dependencies
-    var LayoutUtility = require('./LayoutUtility');
-    var LayoutController = require('./LayoutController');
-    var LayoutNode = require('./LayoutNode');
-    var FlowLayoutNode = require('./FlowLayoutNode');
-    var LayoutNodeManager = require('./LayoutNodeManager');
-    var ContainerSurface = require('famous/surfaces/ContainerSurface');
-    var Transform = require('famous/core/Transform');
-    var EventHandler = require('famous/core/EventHandler');
-    var Group = require('famous/core/Group');
-    var Engine = require('famous/core/Engine');
-    var NativeScrollGroup = require('famous/core/NativeScrollGroup');
-    var Vector = require('famous/math/Vector');
-    var PhysicsEngine = require('famous/physics/PhysicsEngine');
-    var Particle = require('famous/physics/bodies/Particle');
-    var Drag = require('famous/physics/forces/Drag');
-    var Spring = require('famous/physics/forces/Spring');
-    var ScrollSync = require('famous/inputs/ScrollSync');
-    var LinkedListViewSequence = require('./LinkedListViewSequence');
+import LayoutUtility from './LayoutUtility.js';
+import LayoutController from './LayoutController.js';
+import LayoutNode from './LayoutNode.js';
+import FlowLayoutNode from './FlowLayoutNode.js';
+import LayoutNodeManager from './LayoutNodeManager.js';
+import ContainerSurface from 'famous/surfaces/ContainerSurface.js';
+import Transform from 'famous/core/Transform.js';
+import EventHandler from 'famous/core/EventHandler.js';
+import Group from 'famous/core/Group.js';
+import Engine from 'famous/core/Engine.js';
+import NativeScrollGroup from 'famous/core/NativeScrollGroup.js';
+import Vector from 'famous/math/Vector.js';
+import PhysicsEngine from 'famous/physics/PhysicsEngine.js';
+import Particle from 'famous/physics/bodies/Particle.js';
+import Drag from 'famous/physics/forces/Drag.js';
+import Spring from 'famous/physics/forces/Spring.js';
+import ScrollSync from 'famous/inputs/ScrollSync.js';
+import LinkedListViewSequence from './LinkedListViewSequence.js';
+
+export default class ScrollController extends LayoutController {
 
     /**
      * Boudary reached detection
      */
-    var Bounds = {
+    static Bounds = {
         NONE: 0,
         PREV: 1, // top
         NEXT: 2, // bottom
         BOTH: 3
-    };
+    }
 
     /**
      * Source of the spring
      */
-    var SpringSource = {
+    static SpringSource = {
         NONE: 'none',
         NEXTBOUNDS: 'next-bounds', // top
         PREVBOUNDS: 'prev-bounds', // bottom
@@ -79,15 +78,15 @@ define(function(require, exports, module) {
         ENSUREVISIBLE: 'ensure-visible',
         GOTOPREVDIRECTION: 'goto-prev-direction',
         GOTONEXTDIRECTION: 'goto-next-direction'
-    };
+    }
 
     /**
      * Pagination modes
      */
-    var PaginationMode = {
+    static PaginationMode = {
         PAGE: 0,
         SCROLL: 1
-    };
+    }
 
     /**
      * @class
@@ -109,10 +108,10 @@ define(function(require, exports, module) {
      * @param {Bool} [options.layoutAll] When set to true, always lays out all renderables in the datasource (default: `false`).
      * @alias module:ScrollController
      */
-    function ScrollController(options) {
+    constructor(options) {
+        super(options, LayoutManager);
         options = LayoutUtility.combineOptions(ScrollController.DEFAULT_OPTIONS, options);
-        var layoutManager = new LayoutNodeManager(options.flow ? FlowLayoutNode : LayoutNode, _initLayoutNode.bind(this));
-        LayoutController.call(this, options, layoutManager);
+        var layoutManager = new LayoutNodeManager(options.flow ? FlowLayoutNode : LayoutNode, this._initLayoutNode);
 
         // Scrolling
         this._scroll = {
@@ -157,7 +156,7 @@ define(function(require, exports, module) {
             // Create group for faster rendering
             this.group = new Group();
         }
-        this.group.add({render: _innerRender.bind(this)});
+        this.group.add({render: this._innerRender});
 
         // Configure physics engine with particle and drag
         this._scroll.pe.addBody(this._scroll.particle);
@@ -170,19 +169,19 @@ define(function(require, exports, module) {
         this._scroll.springForce.setOptions({ anchor: this._scroll.springEndState });
         if(!options.nativeScroll){
             // Listen to touch events
-            this._eventInput.on('touchstart', _touchStart.bind(this), {axis: this._direction});
-            this._eventInput.on('touchmove', _touchMove.bind(this), {axis: this._direction});
-            this._eventInput.on('touchend', _touchEnd.bind(this), {axis: this._direction});
-            this._eventInput.on('touchcancel', _touchEnd.bind(this), {axis: this._direction});
+            this._eventInput.on('touchstart', this._touchStart, {axis: this._direction});
+            this._eventInput.on('touchmove', this._touchMove, {axis: this._direction});
+            this._eventInput.on('touchend',this. _touchEnd, {axis: this._direction});
+            this._eventInput.on('touchcancel', this._touchEnd, {axis: this._direction});
 
             // Listen to mouse-move events
-            this._eventInput.on('mousedown', _mouseDown.bind(this));
-            this._eventInput.on('mouseup', _mouseUp.bind(this));
-            this._eventInput.on('mousemove', _mouseMove.bind(this));
+            this._eventInput.on('mousedown', this._mouseDown);
+            this._eventInput.on('mouseup', this._mouseUp);
+            this._eventInput.on('mousemove',this. _mouseMove);
             // Listen to mouse-wheel events
             this._scrollSync = new ScrollSync(this.options.scrollSync);
             this._eventInput.pipe(this._scrollSync);
-            this._scrollSync.on('update', _scrollUpdate.bind(this));
+            this._scrollSync.on('update', this._scrollUpdate);
         }
 
 
@@ -195,9 +194,9 @@ define(function(require, exports, module) {
             // the entity-id of this scrollview. This causes the Commit function
             // of this scrollview to be called
             this.container.add({
-                render: function() {
+                render: () => {
                     return this.id;
-                }.bind(this)
+                }
             });
 
             // Pipe events received in container to this scrollview
@@ -210,12 +209,10 @@ define(function(require, exports, module) {
             }
         }
     }
-    ScrollController.prototype = Object.create(LayoutController.prototype);
-    ScrollController.prototype.constructor = ScrollController;
-    ScrollController.Bounds = Bounds;
-    ScrollController.PaginationMode = PaginationMode;
 
-    ScrollController.DEFAULT_OPTIONS = {
+
+
+    static DEFAULT_OPTIONS = {
         useContainer: false,    // when true embeds inside a ContainerSurface for capturing input events & clipping
         container: {
             properties: {
@@ -264,7 +261,7 @@ define(function(require, exports, module) {
         alwaysLayout: false,    // set to true to always call the layout function
         extraBoundsSpace: [100, 100],
         debug: false
-    };
+    }
 
     /**
      * Patches the ScrollController instance's options with the passed-in ones.
@@ -284,8 +281,9 @@ define(function(require, exports, module) {
      * @param {Bool} [options.layoutAll] When set to true, always lays out all renderables in the datasource (default: `false`).
      * @return {ScrollController} this
      */
-    ScrollController.prototype.setOptions = function(options) {
-        LayoutController.prototype.setOptions.call(this, options);
+    setOptions(options) {
+        super.setOptions(options);
+
         if (options.hasOwnProperty('paginationEnergyThresshold')) {
             console.warn('option `paginationEnergyThresshold` has been deprecated, please rename to `paginationEnergyThreshold`.');
             this.setOptions({
@@ -310,7 +308,7 @@ define(function(require, exports, module) {
             this._scrollSync.setOptions(options.scrollSync);
         }
         return this;
-    };
+    }
 
     /**
      * Called whenever a layout-node is created/re-used. Initializes
@@ -318,7 +316,7 @@ define(function(require, exports, module) {
      * locking of the x/y translation so that the x/y position of the renderable
      * is immediately updated when the user scrolls the view.
      */
-    function _initLayoutNode(node, spec) {
+    _initLayoutNode(node, spec) {
         if (!spec && this.options.flowOptions.insertSpec) {
             node.setSpec(this.options.flowOptions.insertSpec);
         }
@@ -327,7 +325,7 @@ define(function(require, exports, module) {
     /**
      * Helper that detects when layout is scrolling optimized (default: true).
      */
-    function _isSequentiallyScrollingOptimized() {
+    _isSequentiallyScrollingOptimized() {
         return !this._layout.capabilities ||
             (this._layout.capabilities.sequentialScrollingOptimized === undefined) ||
             this._layout.capabilities.sequentialScrollingOptimized;
@@ -356,7 +354,7 @@ define(function(require, exports, module) {
     /**
      * Sets the value for the spring, or set to `undefined` to disable the spring
      */
-    function _updateSpring() {
+    _updateSpring() {
         var springValue = this._scroll.scrollForceCount ? undefined : this._scroll.springPosition;
         if (this._scroll.springValue !== springValue) {
             this._scroll.springValue = springValue;
@@ -381,14 +379,14 @@ define(function(require, exports, module) {
     /**
      * Returns the time from the given input event.
      */
-    function _getEventTimestamp(event) {
+    static _getEventTimestamp(event) {
         return event.timeStamp || Date.now();
     }
 
     /**
      * Called whenever the user presses the mouse button on the scrollview
      */
-    function _mouseDown(event) {
+    _mouseDown(event) {
 
         // Check whether mouse-scrolling is enabled
         if (!this.options.mouseMove) {
@@ -416,7 +414,8 @@ define(function(require, exports, module) {
         // Apply scroll force
         this.applyScrollForce(this._scroll.mouseMove.delta);
     }
-    function _mouseMove(event) {
+
+    _mouseMove(event) {
 
         // Check if any mouse-move is active
         if (!this._scroll.mouseMove || !this.options.enabled) {
@@ -443,7 +442,8 @@ define(function(require, exports, module) {
         this.updateScrollForce(this._scroll.mouseMove.delta, delta);
         this._scroll.mouseMove.delta = delta;
     }
-    function _mouseUp(event) {
+
+    _mouseUp(event) {
 
         // Check if any mouse-move is active
         if (!this._scroll.mouseMove) {
@@ -469,14 +469,14 @@ define(function(require, exports, module) {
      * Called whenever the user starts moving the scroll-view, using
      * touch gestures.
      */
-    function _touchStart(event) {
+    _touchStart(event) {
 
         // Create touch-end event listener
         if (!this._touchEndEventListener) {
-            this._touchEndEventListener = function(event2) {
+            this._touchEndEventListener = (event2) => {
                 event2.target.removeEventListener('touchend', this._touchEndEventListener);
-                _touchEnd.call(this, event2);
-            }.bind(this);
+                this._touchEnd(event2);
+            };
         }
 
         // Remove any touches that are no longer active
@@ -542,7 +542,7 @@ define(function(require, exports, module) {
      * Called whenever the user is moving his/her fingers to scroll the view.
      * Updates the moveOffset so that the scroll-offset on the view is updated.
      */
-    function _touchMove(event) {
+    _touchMove(event) {
         if (!this.options.enabled) {
             return;
         }
@@ -588,7 +588,7 @@ define(function(require, exports, module) {
      * gesture give the scroll-offset particle a velocity and momentum into a
      * certain direction.
      */
-    function _touchEnd(event) {
+    _touchEnd(event) {
 
         // Remove touch
         var primaryTouch = this._scroll.activeTouches.length ? this._scroll.activeTouches[0] : undefined;
@@ -638,7 +638,7 @@ define(function(require, exports, module) {
      * Called whenever the user is scrolling the view using either a mouse
      * scroll wheel or a track-pad.
      */
-    function _scrollUpdate(event) {
+    _scrollUpdate(event) {
         if (!this.options.enabled) {
             return;
         }
@@ -658,7 +658,7 @@ define(function(require, exports, module) {
     /**
      * Updates the scroll offset particle.
      */
-    function _setParticle(position, velocity, phase) {
+    _setParticle(position, velocity, phase) {
         if (position !== undefined) {
             //var oldPosition = this._scroll.particle.getPosition1D();
             this._scroll.particleValue = position;
@@ -680,7 +680,7 @@ define(function(require, exports, module) {
     /**
      * Get the in-use scroll-offset.
      */
-    function _calcScrollOffset(normalize, refreshParticle) {
+    _calcScrollOffset(normalize, refreshParticle) {
 
         // When moving using touch-gestures, make the offset stick to the
         // finger. When the bounds is exceeded, decrease the scroll distance
@@ -702,7 +702,7 @@ define(function(require, exports, module) {
             if (normalize) {
                 if (!this._scroll.scrollDelta) {
                     this._scroll.normalizedScrollDelta = 0;
-                    _setParticle.call(this, scrollOffset, undefined, '_calcScrollOffset');
+                    this._setParticle(scrollOffset, undefined, '_calcScrollOffset');
                 }
                 this._scroll.normalizedScrollDelta += this._scroll.scrollDelta;
                 this._scroll.scrollDelta = 0;
@@ -735,7 +735,7 @@ define(function(require, exports, module) {
      * Helper function that calculates the next/prev layed out height.
      * @private
      */
-    ScrollController.prototype._calcScrollHeight = function(next, lastNodeOnly) {
+    _calcScrollHeight(next, lastNodeOnly) {
         var calcedHeight = 0;
         var node = this._nodes.getStartEnumNode(next);
         while (node) {
@@ -759,12 +759,12 @@ define(function(require, exports, module) {
     /**
      * Calculates the scroll boundaries and sets the spring accordingly.
      */
-    function _calcBounds(size, scrollOffset) {
+    _calcBounds(size, scrollOffset) {
 
         // Local data
         var prevHeight = this._calcScrollHeight(false);
         var nextHeight = this._calcScrollHeight(true);
-        var enforeMinSize = _isSequentiallyScrollingOptimized.call(this);
+        var enforeMinSize = this._isSequentiallyScrollingOptimized();
 
         // 1. When the rendered height is smaller than the total height,
         //    then lock to the primary bounds
@@ -839,7 +839,7 @@ define(function(require, exports, module) {
     /**
      * Calculates the scrollto-offset to which the spring is set when doing scrollToRenderNode.
      */
-    function _calcScrollToOffset(size, scrollOffset) {
+    _calcScrollToOffset(size, scrollOffset) {
         var scrollToRenderNode = this._scroll.scrollToRenderNode || this._scroll.ensureVisibleRenderNode;
         if (!scrollToRenderNode) {
             return;
@@ -963,7 +963,7 @@ define(function(require, exports, module) {
     /**
      * Snaps to a page when pagination is enabled.
      */
-    function _snapToPage() {
+    _snapToPage() {
 
         // Check whether pagination is active
         if (!this.options.paginated ||
@@ -995,7 +995,7 @@ define(function(require, exports, module) {
     /**
      * Normalizes the view-sequence node so that the view-sequence is near to 0.
      */
-    function _normalizePrevViewSequence(scrollOffset) {
+    _normalizePrevViewSequence(scrollOffset) {
         var count = 0;
         var normalizedScrollOffset = scrollOffset;
         var normalizeNextPrev = false;
@@ -1029,7 +1029,9 @@ define(function(require, exports, module) {
         }
         return normalizedScrollOffset;
     }
-    function _normalizeNextViewSequence(scrollOffset) {
+
+
+    _normalizeNextViewSequence(scrollOffset) {
         var count = 0;
         var normalizedScrollOffset = scrollOffset;
         var node = this._nodes.getStartEnumNode(true);
@@ -1054,7 +1056,9 @@ define(function(require, exports, module) {
         }
         return normalizedScrollOffset;
     }
-    function _normalizeViewSequence(size, scrollOffset) {
+
+
+    _normalizeViewSequence(size, scrollOffset) {
 
         // Check whether normalisation is disabled
         var caps = this._layout.capabilities;
@@ -1072,19 +1076,19 @@ define(function(require, exports, module) {
         // 1. Normalize in primary direction
         var normalizedScrollOffset = scrollOffset;
         if (this.options.alignment && (scrollOffset < 0)) {
-            normalizedScrollOffset = _normalizeNextViewSequence.call(this, scrollOffset);
+            normalizedScrollOffset = this._normalizeNextViewSequence(scrollOffset);
         }
         else if (!this.options.alignment && (scrollOffset > 0)){
-            normalizedScrollOffset = _normalizePrevViewSequence.call(this, scrollOffset);
+            normalizedScrollOffset = this._normalizePrevViewSequence(scrollOffset);
         }
 
         // 2. Normalize in secondary direction
         if (normalizedScrollOffset === scrollOffset) {
             if (this.options.alignment && (scrollOffset > 0)) {
-                normalizedScrollOffset = _normalizePrevViewSequence.call(this, scrollOffset);
+                normalizedScrollOffset = this._normalizePrevViewSequence(scrollOffset);
             }
             else if (!this.options.alignment && (scrollOffset < 0)) {
-                normalizedScrollOffset = _normalizeNextViewSequence.call(this, scrollOffset);
+                normalizedScrollOffset = this._normalizeNextViewSequence(scrollOffset);
             }
         }
 
@@ -1095,7 +1099,7 @@ define(function(require, exports, module) {
             // Adjust particle
             var particleValue = this._scroll.particle.getPosition1D();
             //var particleValue = this._scroll.particleValue;
-            _setParticle.call(this, particleValue + delta, undefined, 'normalize');
+            this._setParticle(particleValue + delta, undefined, 'normalize');
             //console.log('normalized scrollOffset: ', normalizedScrollOffset, ', old: ', scrollOffset, ', particle: ', particleValue + delta);
 
             // Adjust scroll spring
@@ -1104,7 +1108,7 @@ define(function(require, exports, module) {
             }
 
             // Adjust group offset
-            if (_isSequentiallyScrollingOptimized.call(this)) {
+            if (this._isSequentiallyScrollingOptimized()) {
                 this._scroll.groupStart -= delta;
             }
         }
@@ -1126,7 +1130,7 @@ define(function(require, exports, module) {
      * ```
      * @return {Array} array of items
      */
-    ScrollController.prototype.getVisibleItems = function() {
+    getVisibleItems() {
         var size = this._contextSizeCache;
         var scrollOffset = this.options.alignment ? (this._scroll.unnormalizedScrollOffset + size[this._direction]) : this._scroll.unnormalizedScrollOffset;
         var result = [];
@@ -1170,12 +1174,12 @@ define(function(require, exports, module) {
             node = node._prev;
         }
         return result;
-    };
+    }
 
     /**
      * Get the first or last visible item in the view.
      */
-    function _getVisibleItem(first) {
+    _getVisibleItem(first) {
         var result = {};
         var diff;
         var prevDiff = 10000000;
@@ -1237,8 +1241,8 @@ define(function(require, exports, module) {
      *
      * @return {Object} item or `undefined`
      */
-    ScrollController.prototype.getFirstVisibleItem = function() {
-        return _getVisibleItem.call(this, true);
+    getFirstVisibleItem() {
+        return this._getVisibleItem(true);
     };
 
 
@@ -1247,7 +1251,7 @@ define(function(require, exports, module) {
      *
      * @return {LayoutController} this
      */
-    ScrollController.prototype.reLayout = function() {
+    reLayout() {
         return this._reLayout = true;
     };
 
@@ -1256,22 +1260,22 @@ define(function(require, exports, module) {
      *
      * @return {Object} item or `undefined`
      */
-    ScrollController.prototype.getLastVisibleItem = function() {
-        return _getVisibleItem.call(this, false);
-    };
+    getLastVisibleItem() {
+        return this._getVisibleItem(false);
+    }
 
     /**
      * Helper function that goes to a view-sequence either by scrolling
      * or immediately without any scrolling animation.
      */
-    function _goToSequence(viewSequence, next, noAnimation) {
+    _goToSequence(viewSequence, next, noAnimation) {
         if (noAnimation) {
             this._viewSequence = viewSequence;
             this._scroll.springPosition = undefined;
-            _updateSpring.call(this);
+            this._updateSpring();
             this.halt();
             this._scroll.scrollDelta = 0;
-            _setParticle.call(this, 0, 0, '_goToSequence');
+            this._setParticle(0, 0, '_goToSequence');
             this._scroll.scrollDirty = true;
         }
         else {
@@ -1286,7 +1290,7 @@ define(function(require, exports, module) {
     /**
      * Helper function that scrolls the view towards a view-sequence node.
      */
-    function _ensureVisibleSequence(viewSequence, next) {
+    _ensureVisibleSequence(viewSequence, next) {
             this._scroll.scrollToSequence = undefined;
             this._scroll.scrollToRenderNode = undefined;
             this._scroll.ensureVisibleRenderNode = viewSequence.get();
@@ -1300,7 +1304,7 @@ define(function(require, exports, module) {
      * @param {Number} [amount] Amount of nodes to move
      * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      */
-    function _goToPage(amount, noAnimation) {
+    _goToPage(amount, noAnimation) {
 
         // Get current scroll-position. When a previous call was made to
         // `scroll' or `scrollTo` and that node has not yet been reached, then
@@ -1330,7 +1334,7 @@ define(function(require, exports, module) {
                 break;
             }
         }
-        _goToSequence.call(this, viewSequence, amount >= 0, noAnimation);
+        this._goToSequence(viewSequence, amount >= 0, noAnimation);
     }
 
     /**
@@ -1341,7 +1345,7 @@ define(function(require, exports, module) {
      * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToFirstPage = function(noAnimation) {
+    goToFirstPage(noAnimation) {
         if (!this._viewSequence) {
             return this;
         }
@@ -1359,7 +1363,7 @@ define(function(require, exports, module) {
                 break;
             }
         }
-        _goToSequence.call(this, viewSequence, false, noAnimation);
+        this._goToSequence(viewSequence, false, noAnimation);
         return this;
     };
 
@@ -1369,8 +1373,8 @@ define(function(require, exports, module) {
      * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToPreviousPage = function(noAnimation) {
-        _goToPage.call(this, -1, noAnimation);
+    goToPreviousPage(noAnimation) {
+        this._goToPage(-1, noAnimation);
         return this;
     };
 
@@ -1380,8 +1384,8 @@ define(function(require, exports, module) {
      * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToNextPage = function(noAnimation) {
-        _goToPage.call(this, 1, noAnimation);
+    goToNextPage(noAnimation) {
+        this._goToPage(1, noAnimation);
         return this;
     };
 
@@ -1393,7 +1397,7 @@ define(function(require, exports, module) {
      * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToLastPage = function(noAnimation) {
+    goToLastPage(noAnimation) {
         if (!this._viewSequence) {
             return this;
         }
@@ -1411,7 +1415,7 @@ define(function(require, exports, module) {
                 break;
             }
         }
-        _goToSequence.call(this, viewSequence, true, noAnimation);
+        this._goToSequence(viewSequence, true, noAnimation);
         return this;
     };
 
@@ -1422,7 +1426,7 @@ define(function(require, exports, module) {
      * @param {Bool} [noAnimation] When set to true, immediately shows the node without scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToRenderNode = function(node, noAnimation) {
+    goToRenderNode(node, noAnimation) {
 
         // Verify arguments and state
         if (!this._viewSequence || !node) {
@@ -1431,8 +1435,8 @@ define(function(require, exports, module) {
 
         // Check current node
         if (this._viewSequence.get() === node) {
-            var next = _calcScrollOffset.call(this) >= 0;
-            _goToSequence.call(this, this._viewSequence, next, noAnimation);
+            var next = this._calcScrollOffset() >= 0;
+            this._goToSequence(this._viewSequence, next, noAnimation);
             return this;
         }
 
@@ -1444,12 +1448,12 @@ define(function(require, exports, module) {
         while ((nextSequence || prevSequence) && (nextSequence !== this._viewSequence)){
             var nextNode = nextSequence ? nextSequence.get() : undefined;
             if (nextNode === node) {
-                _goToSequence.call(this, nextSequence, true, noAnimation);
+                this._goToSequence(nextSequence, true, noAnimation);
                 break;
             }
             var prevNode = prevSequence ? prevSequence.get() : undefined;
             if (prevNode === node) {
-                _goToSequence.call(this, prevSequence, false, noAnimation);
+                this._goToSequence(prevSequence, false, noAnimation);
                 break;
             }
             nextSequence = nextNode ? nextSequence.getNext() : undefined;
@@ -1467,7 +1471,7 @@ define(function(require, exports, module) {
      * @param {Number|LinkedListViewSequence|Renderable} node index, renderNode or LinkedListViewSequence
      * @return {ScrollController} this
      */
-    ScrollController.prototype.ensureVisible = function(node) {
+    ensureVisible(node) {
 
         // Convert argument into renderNode
         if (node instanceof LinkedListViewSequence) {
@@ -1491,8 +1495,8 @@ define(function(require, exports, module) {
 
         // Check current node
         if (this._viewSequence.get() === node) {
-            var next = _calcScrollOffset.call(this) >= 0;
-            _ensureVisibleSequence.call(this, this._viewSequence, next);
+            var next = this._calcScrollOffset() >= 0;
+            this._ensureVisibleSequence(this._viewSequence, next);
             return this;
         }
 
@@ -1504,12 +1508,12 @@ define(function(require, exports, module) {
         while ((nextSequence || prevSequence) && (nextSequence !== this._viewSequence)){
             var nextNode = nextSequence ? nextSequence.get() : undefined;
             if (nextNode === node) {
-                _ensureVisibleSequence.call(this, nextSequence, true);
+                this._ensureVisibleSequence(nextSequence, true);
                 break;
             }
             var prevNode = prevSequence ? prevSequence.get() : undefined;
             if (prevNode === node) {
-                _ensureVisibleSequence.call(this, prevSequence, false);
+                this._ensureVisibleSequence(prevSequence, false);
                 break;
             }
             nextSequence = nextNode ? nextSequence.getNext() : undefined;
@@ -1525,7 +1529,7 @@ define(function(require, exports, module) {
      * @param {Number} delta Delta in pixels (< 0 = down/right, > 0 = top/left).
      * @return {ScrollController} this
      */
-    ScrollController.prototype.scroll = function(delta) {
+    scroll(delta) {
         this.halt();
         this._scroll.scrollDelta += delta;
         return this;
@@ -1541,10 +1545,10 @@ define(function(require, exports, module) {
      * @param {Number} delta Delta to test
      * @return {Number} Number of pixels the view is allowed to scroll
      */
-    ScrollController.prototype.canScroll = function(delta) {
+    canScroll(delta) {
 
         // Calculate height in both directions
-        var scrollOffset = _calcScrollOffset.call(this);
+        var scrollOffset = this._calcScrollOffset();
         var prevHeight = this._calcScrollHeight(false);
         var nextHeight = this._calcScrollHeight(true);
 
@@ -1568,7 +1572,7 @@ define(function(require, exports, module) {
             return Math.min(prevOffset, delta);
         }
         return delta;
-    };
+    }
 
     /**
      * Halts all scrolling going on. In essence this function sets
@@ -1577,58 +1581,58 @@ define(function(require, exports, module) {
      *
      * @return {ScrollController} this
      */
-    ScrollController.prototype.halt = function() {
+    halt() {
         this._scroll.scrollToSequence = undefined;
         this._scroll.scrollToRenderNode = undefined;
         this._scroll.ensureVisibleRenderNode = undefined;
-        _setParticle.call(this, undefined, 0, 'halt');
+        this._setParticle(undefined, 0, 'halt');
         return this;
-    };
+    }
 
     /**
      * Checks whether scrolling is in progress or not.
      *
      * @return {Bool} true when scrolling is active
      */
-    ScrollController.prototype.isScrolling = function() {
+    isScrolling() {
         return this._scroll.isScrolling;
-    };
+    }
 
     /**
      * Checks whether user is touching the ScrollController.
      *
      * @return {Bool} true when user is touching the ScrollController
      */
-    ScrollController.prototype.isTouching = function() {
+    isTouching() {
         return this._scroll.activeTouches.length > 0;
-    };
+    }
 
     /**
      * Checks whether any boundaries have been reached.
      *
      * @return {ScrollController.Bounds} Either, Bounds.PREV, Bounds.NEXT, Bounds.BOTH or Bounds.NONE
      */
-    ScrollController.prototype.getBoundsReached = function() {
+    getBoundsReached() {
         return this._scroll.boundsReached;
-    };
+    }
 
     /**
      * Get the current scrolling velocity.
      *
      * @return {Number} Scroll velocity
      */
-    ScrollController.prototype.getVelocity = function() {
+    getVelocity() {
         return this._scroll.particle.getVelocity1D();
-    };
+    }
 
     /**
      * Get the current energy of the scrolling particle.
      *
      * @return {Number} Energy
      */
-    ScrollController.prototype.getEnergy = function() {
+    getEnergy() {
         return this._scroll.particle.getEnergy();
-    };
+    }
 
     /**
      * Set the scrolling velocity.
@@ -1636,9 +1640,9 @@ define(function(require, exports, module) {
      * @param {Number} velocity New scroll velocity
      * @return {ScrollController} this
      */
-    ScrollController.prototype.setVelocity = function(velocity) {
+    setVelocity(velocity) {
         return this._scroll.particle.setVelocity1D(velocity);
-    };
+    }
 
     /**
      * Applies a permanent scroll-force (delta) until it is released.
@@ -1653,7 +1657,7 @@ define(function(require, exports, module) {
      * @param {Number} delta Starting scroll-delta force to apply
      * @return {ScrollController} this
      */
-    ScrollController.prototype.applyScrollForce = function(delta) {
+    applyScrollForce(delta) {
         this.halt();
         if (this._scroll.scrollForceCount === 0) {
             this._scroll.scrollForceStartItem = this.options.alignment ? this.getLastVisibleItem() : this.getFirstVisibleItem();
@@ -1666,7 +1670,7 @@ define(function(require, exports, module) {
             delta: delta
         });
         return this;
-    };
+    }
 
     /**
      * Updates a existing scroll-force previously applied by calling
@@ -1679,7 +1683,7 @@ define(function(require, exports, module) {
      * @param {Number} newDelta New delta
      * @return {ScrollController} this
      */
-    ScrollController.prototype.updateScrollForce = function(prevDelta, newDelta) {
+    updateScrollForce(prevDelta, newDelta) {
         this.halt();
         newDelta -= prevDelta;
         this._scroll.scrollForce += newDelta;
@@ -1689,7 +1693,7 @@ define(function(require, exports, module) {
             delta: newDelta
         });
         return this;
-    };
+    }
 
     /**
      * Releases a scroll-force and sets the velocity.
@@ -1701,11 +1705,11 @@ define(function(require, exports, module) {
      * @param {Number} [velocity] Velocity to apply after which the view keeps scrolling
      * @return {ScrollController} this
      */
-    ScrollController.prototype.releaseScrollForce = function(delta, velocity, detectSwipes) {
+    releaseScrollForce(delta, velocity, detectSwipes) {
         this.halt();
         if (this._scroll.scrollForceCount === 1) {
-            var scrollOffset = _calcScrollOffset.call(this);
-            _setParticle.call(this, scrollOffset, velocity, 'releaseScrollForce');
+            var scrollOffset = this._calcScrollOffset();
+            this._setParticle(scrollOffset, velocity, 'releaseScrollForce');
             this._scroll.pe.wake();
             this._scroll.scrollForce = 0;
             this._scroll.scrollDirty = true;
@@ -1748,7 +1752,7 @@ define(function(require, exports, module) {
             });
         }
         return this;
-    };
+    }
 
     /**
      * Get the spec (size, transform, etc..) for the given renderable or
@@ -1758,9 +1762,9 @@ define(function(require, exports, module) {
      * @param {Bool} normalize When set to `true` normalizes the origin/align into the transform translation (default: `false`).
      * @return {Spec} spec or undefined
      */
-    ScrollController.prototype.getSpec = function(node, normalize) {
-        var spec = LayoutController.prototype.getSpec.apply(this, arguments);
-        if (spec && _isSequentiallyScrollingOptimized.call(this)) {
+    getSpec(node, normalize) {
+        var spec = super.getSpec(...arguments);
+        if (spec && this._isSequentiallyScrollingOptimized()) {
             spec = {
                 origin: spec.origin,
                 align: spec.align,
@@ -1774,12 +1778,12 @@ define(function(require, exports, module) {
             spec.transform = Transform.thenMove(spec.transform, translate);
         }
         return spec;
-    };
+    }
 
     /**
      * Executes the layout and updates the state of the scrollview.
      */
-    function _layout(size, scrollOffset, nested) {
+    _layout(size, scrollOffset, nested) {
 
         // Track the number of times the layout-function was executed
         this._debug.layoutCount++;
@@ -1840,36 +1844,36 @@ define(function(require, exports, module) {
 
         // Check whether the bounds have been reached
         //var oldBoundsReached = this._scroll.boundsReached;
-        _calcBounds.call(this, size, scrollOffset);
+        this._calcBounds(size, scrollOffset);
         //if (oldBoundsReached !== this._scroll.boundsReached) {
         //    _log.call(this, 'bounds reached changed (', oldBoundsReached, ' != ', this._scroll.boundsReached, ')');
         //}
 
         // Update scroll-to spring
-        _calcScrollToOffset.call(this, size, scrollOffset);
+        this._calcScrollToOffset(size, scrollOffset);
 
         // When pagination is enabled, snap to page
-        _snapToPage.call(this);
+        this._snapToPage();
 
 
         // Normalize scroll offset so that the current viewsequence node is as close to the
         // top as possible and the layout function will need to process the least amount
         // of renderables.
-        scrollOffset = _normalizeViewSequence.call(this, size, scrollOffset);
+        scrollOffset = this._normalizeViewSequence(size, scrollOffset);
 
 
 
         // If the bounds have changed, and the scroll-offset would be different
         // than before, then re-layout entirely using the new offset.
-        var newScrollOffset = _calcScrollOffset.call(this, true);
+        var newScrollOffset = this._calcScrollOffset(true);
         if (!nested && (newScrollOffset !== scrollOffset)) {
             //_log.call(this, 'offset changed, re-layouting... (', scrollOffset, ' != ', newScrollOffset, ')');
-            return _layout.call(this, size, newScrollOffset, true);
+            return this._layout(size, newScrollOffset, true);
         }
 
 
         // Update spring
-        _updateSpring.call(this);
+        this._updateSpring();
 
         // Cleanup any nodes in case of a VirtualViewSequence
         this._nodes.removeVirtualViewSequenceNodes();
@@ -1896,7 +1900,7 @@ define(function(require, exports, module) {
     /**
      * Inner render function of the Group
      */
-    function _innerRender() {
+    _innerRender() {
         var specs = this._specs;
         for (var i3 = 0, j3 = specs.length; i3 < j3; i3++) {
             if (specs[i3].renderNode) {
@@ -1922,7 +1926,7 @@ define(function(require, exports, module) {
      * @method commit
      * @param {Context} context commit context
      */
-    ScrollController.prototype.commit = function commit(context) {
+    commit(context) {
         var size = context.size;
 
         // Update debug info
@@ -1935,7 +1939,7 @@ define(function(require, exports, module) {
             this._nodes.removeAll();
         }
         //Calculate the scrollOffset, but don't store the variable if using native scroll
-        var scrollOffset = _calcScrollOffset.call(this, true, true);
+        var scrollOffset = this._calcScrollOffset(true, true);
         if(this.options.nativeScroll){
             if(this.group._element){
                 scrollOffset = this.group._element.scrollTop + this.options.extraBoundsSpace[0] - this._scroll.groupStart;
@@ -1998,7 +2002,7 @@ define(function(require, exports, module) {
 
 
             // Perform layout
-            scrollOffset = _layout.call(this, size, scrollOffset);
+            scrollOffset = this._layout(size, scrollOffset);
             this._scrollOffsetCache = scrollOffset;
 
             /* Depending on whether an inserted node is in view or not, we might have to enable flowing mode */
@@ -2046,7 +2050,7 @@ define(function(require, exports, module) {
         groupTranslate[1] = 0;
         groupTranslate[2] = 0;
         groupTranslate[this._direction] = -this._scroll.groupStart - scrollOffset;
-        var sequentialScrollingOptimized = _isSequentiallyScrollingOptimized.call(this);
+        var sequentialScrollingOptimized = this._isSequentiallyScrollingOptimized();
         var result = this._nodes.buildSpecAndDestroyUnrenderedNodes(sequentialScrollingOptimized ? groupTranslate : undefined);
         this._specs = result.specs;
         if (!this._specs.length) {
@@ -2131,9 +2135,9 @@ define(function(require, exports, module) {
             origin: context.origin,
             target: this.group.render()
         };
-    };
+    }
 
-    ScrollController.prototype.replace = function(indexOrId, renderable, noAnimation) {
+    replace(indexOrId, renderable, noAnimation) {
         var sequence;
         //TODO: Check when _nodesById is used as well
         if (!this._nodesById){
@@ -2143,9 +2147,7 @@ define(function(require, exports, module) {
                 this._scroll.ensureVisibleRenderNode = renderable;
             }
         }
-        return LayoutController.prototype.replace.call(this, indexOrId, renderable, noAnimation, sequence);
-
-
+        return super.replace(indexOrId, renderable, noAnimation, sequence);
     }
 
     /**
@@ -2155,14 +2157,12 @@ define(function(require, exports, module) {
      * @method render
      * @return {number} Render spec for this component
      */
-    ScrollController.prototype.render = function render() {
+    render render() {
         if (this.container) {
             return this.container.render.apply(this.container, arguments);
         }
         else {
             return this.id;
         }
-    };
-
-    module.exports = ScrollController;
-});
+    }
+}

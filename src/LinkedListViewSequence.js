@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /*global console*/
@@ -17,12 +16,13 @@
  *
  * @module
  */
-define(function(require, exports, module) {
+
+export default class LinkedListViewSequence {
 
     /**
      * @private
      */
-    function assert(value, message) {
+    static assert(value, message) {
         if (!value) {
             //debugger;
             throw new Error(message);
@@ -34,7 +34,7 @@ define(function(require, exports, module) {
      * @param {Object} options Configurable options.
      * @alias module:LinkedListViewSequence
      */
-    function LinkedListViewSequence(items) {
+    constructor(items) {
         if (Array.isArray(items)) {
             this._ = new (this.constructor.Backing)(this);
             for (var i = 0; i < items.length; i++) {
@@ -46,74 +46,55 @@ define(function(require, exports, module) {
         }
     }
 
-    LinkedListViewSequence.Backing = function Backing() {
+    static Backing() {
         this.length = 0;
-    };
+    }
 
-    /*LinkedListViewSequence.prototype.verifyIntegrity = function() {
-        var item = this._.head;
-        var count = 0;
-        while (item) {
-          assert(item._value, 'no rendernode at index: ' + count);
-          count++;
-          assert(count <= this._.length, 'head -> tail, node-count exceeds length: ' + count + ' > ' + this._.length);
-          item = item._next;
-        }
-        assert(count === this._.length, 'head -> tail, different count: ' + count + ' != ' + this._.length);
-        item = this._.tail;
-        count = 0;
-        while (item) {
-          count++;
-          assert(count <= this._.length, 'tail -> head, node-count exceeds length: ' + count + ' > ' + this._.length);
-          item = item._prev;
-        }
-        assert(count === this._.length, 'tail -> head, different count: ' + count + ' != ' + this._.length);
-    };*/
 
     /**
      * Get head node.
      *
      * @return {LinkedListViewSequence} head node.
      */
-    LinkedListViewSequence.prototype.getHead = function() {
+    getHead() {
         return this._.head;
-    };
+    }
 
     /**
      * Get tail node.
      *
      * @return {LinkedListViewSequence} tail node.
      */
-    LinkedListViewSequence.prototype.getTail = function() {
+    getTail() {
         return this._.tail;
-    };
+    }
 
     /**
      * Get previous node.
      *
      * @return {LinkedListViewSequence} previous node.
      */
-    LinkedListViewSequence.prototype.getPrevious = function() {
+    getPrevious() {
         return this._prev;
-    };
+    }
 
     /**
      * Get next node.
      *
      * @return {LinkedListViewSequence} next node.
      */
-    LinkedListViewSequence.prototype.getNext = function() {
+    getNext() {
         return this._next;
-    };
+    }
 
     /**
      * Gets the value of this node.
      *
      * @return {Renderable} surface/view
      */
-    LinkedListViewSequence.prototype.get = function() {
+    get() {
         return this._value;
-    };
+    }
 
     /**
      * Sets the value of this node.
@@ -121,28 +102,28 @@ define(function(require, exports, module) {
      * @param {Renderable} value surface/view
      * @return {LinkedListViewSequence} this
      */
-    LinkedListViewSequence.prototype.set = function(value) {
+    set(value) {
         this._value = value;
         return this;
-    };
+    }
 
     /**
      * Get the index of the node.
      *
      * @return {Number} Index of node.
      */
-    LinkedListViewSequence.prototype.getIndex = function() {
+    getIndex() {
         return this._value ? this.indexOf(this._value) : 0;
-    };
+    }
 
     /**
      * Get human readable string verion of the node.
      *
      * @return {String} node as a human readable string
      */
-    LinkedListViewSequence.prototype.toString = function() {
+    toString() {
         return '' + this.getIndex();
-    };
+    }
 
     /**
      * Finds the index of a given render-node.
@@ -150,7 +131,7 @@ define(function(require, exports, module) {
      * @param {Renderable} item Render-node to find.
      * @return {Number} Index or -1 when not found.
      */
-    LinkedListViewSequence.prototype.indexOf = function(item) {
+    indexOf(item) {
         var sequence = this._.head;
         var index = 0;
         while (sequence) {
@@ -163,7 +144,7 @@ define(function(require, exports, module) {
         return -1;
     };
 
-    LinkedListViewSequence.prototype.toArray = function() {
+    toArray() {
         var sequence = this._.head;
         var index = 0;
         var arrayConversion = new Array(this.getLength());
@@ -181,7 +162,7 @@ define(function(require, exports, module) {
      * @param {Number} index 0-based index.
      * @return {LinkedListViewSequence} View-sequence node or undefined.
      */
-    LinkedListViewSequence.prototype.findByIndex = function(index) {
+    findByIndex(index) {
         index = (index === -1) ? (this._.length - 1) : index;
         if ((index < 0) || (index >= this._.length)) {
             return undefined;
@@ -217,7 +198,7 @@ define(function(require, exports, module) {
      * @param {Renderable} value Render-node to search for.
      * @return {LinkedListViewSequence} View-sequence node or undefined.
      */
-    LinkedListViewSequence.prototype.findByValue = function(value) {
+    findByValue(value) {
         var sequence = this._.head;
         while (sequence) {
             if (sequence.get() === value) {
@@ -235,7 +216,7 @@ define(function(require, exports, module) {
      * @param {Renderable} renderNode Renderable to insert.
      * @return {LinkedListViewSequence} newly inserted view-sequence node.
      */
-    LinkedListViewSequence.prototype.insert = function(index, renderNode) {
+    insert(index, renderNode) {
         index = (index === -1) ? this._.length : index;
         /*if (this._.debug) {
             console.log(this._.logName + ': insert (length: ' + this._.length + ')');
@@ -308,7 +289,7 @@ define(function(require, exports, module) {
      * @param {LinkedListViewSequence} sequence Node to remove
      * @return {LinkedListViewSequence} New current view-sequence node to display.
      */
-    LinkedListViewSequence.prototype.remove = function(sequence) {
+    remove(sequence) {
         /*if (this._.debug) {
             console.log(this._.logName + ': remove (length: ' + this._.length + ')');
         }*/
@@ -356,7 +337,7 @@ define(function(require, exports, module) {
      *
      * @return {Number} length.
      */
-    LinkedListViewSequence.prototype.getLength = function() {
+    getLength() {
         return this._.length;
     };
 
@@ -365,7 +346,7 @@ define(function(require, exports, module) {
      *
      * @return {LinkedListViewSequence} Last remaining view-sequence node.
      */
-    LinkedListViewSequence.prototype.clear = function() {
+    clear() {
         var sequence = this; //eslint-disable-line consistent-this
         while (this._.length) {
           sequence = sequence.remove(this._.tail);
@@ -380,7 +361,7 @@ define(function(require, exports, module) {
      * @param {Renderable} renderNode Renderable to insert.
      * @return {LinkedListViewSequence} newly inserted view-sequence node.
      */
-    LinkedListViewSequence.prototype.unshift = function(renderNode) {
+    unshift(renderNode) {
         return this.insert(0, renderNode);
     };
 
@@ -390,11 +371,11 @@ define(function(require, exports, module) {
      * @param {Renderable} renderNode Renderable to insert.
      * @return {LinkedListViewSequence} newly inserted view-sequence node.
      */
-    LinkedListViewSequence.prototype.push = function(renderNode) {
+    push(renderNode) {
         return this.insert(-1, renderNode);
     };
 
-    LinkedListViewSequence.prototype.splice = function(index, remove, items) {
+    splice(index, remove, items) {
         if (console.error) {
             console.error('LinkedListViewSequence.splice is not supported');
         }
@@ -407,7 +388,7 @@ define(function(require, exports, module) {
      * @param {Number} index2 Index of item to swap with.
      * @return {LinkedListViewSequence} this
      */
-    LinkedListViewSequence.prototype.swap = function(index, index2) {
+    swap(index, index2) {
         var sequence1 = this.findByIndex(index);
         if (!sequence1) {
             throw new Error('Invalid first index specified to swap: ' + index);
@@ -421,7 +402,5 @@ define(function(require, exports, module) {
         sequence2._value = swap;
         //this.verifyIntegrity();
         return this;
-    };
-
-    module.exports = LinkedListViewSequence;
-});
+    }
+}

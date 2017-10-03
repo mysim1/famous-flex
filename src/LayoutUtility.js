@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /*global console*/
@@ -16,33 +15,35 @@
  *
  * @module
  */
-define(function(require, exports, module) {
 
-    // import dependencies
-    var Utility = require('famous/utilities/Utility');
 
+import Utility from 'famous/utilities/Utility.js';
+
+
+export default class LayoutUtility {
     /**
      * @class
      * @alias module:LayoutUtility
      */
-    function LayoutUtility() {
+    constructor() {
     }
-    LayoutUtility.registeredHelpers = {};
 
-    var Capabilities = {
+    static registeredHelpers = {};
+
+
+    static Capabilities = {
         SEQUENCE: 1,
         DIRECTION_X: 2,
         DIRECTION_Y: 4,
         SCROLLING: 8
-    };
-    LayoutUtility.Capabilities = Capabilities;
+    }
 
     /**
      *  Normalizes the margins argument.
      *
      *  @param {Array.Number} margins
      */
-    LayoutUtility.normalizeMargins = function(margins) {
+    static normalizeMargins(margins) {
         if (!margins) {
             return [0, 0, 0, 0];
         }
@@ -61,7 +62,7 @@ define(function(require, exports, module) {
         else {
             return margins;
         }
-    };
+    }
 
     /**
      * Makes a (shallow) copy of a spec.
@@ -69,7 +70,7 @@ define(function(require, exports, module) {
      * @param {Spec} spec Spec to clone
      * @return {Spec} cloned spec
      */
-    LayoutUtility.cloneSpec = function(spec) {
+    static cloneSpec(spec) {
         var clone = {};
         if (spec.opacity !== undefined) {
             clone.opacity = spec.opacity;
@@ -87,12 +88,12 @@ define(function(require, exports, module) {
             clone.align = spec.align.slice(0);
         }
         return clone;
-    };
+    }
 
     /**
      * Compares two arrays for equality.
      */
-    function _isEqualArray(a, b) {
+    static _isEqualArray(a, b) {
         if (a === b) {
             return true;
         }
@@ -118,7 +119,7 @@ define(function(require, exports, module) {
      * @param {Spec} spec2 Spec to compare
      * @return {Boolean} true/false
      */
-    LayoutUtility.isEqualSpec = function(spec1, spec2) {
+    static isEqualSpec(spec1, spec2) {
         if (spec1.opacity !== spec2.opacity) {
             return false;
         }
@@ -135,7 +136,7 @@ define(function(require, exports, module) {
             return false;
         }
         return true;
-    };
+    }
 
     /**
      * Helper function that returns a string containing the differences
@@ -145,7 +146,7 @@ define(function(require, exports, module) {
      * @param {Spec} spec2 Spec to compare
      * @return {String} text
      */
-    LayoutUtility.getSpecDiffText = function(spec1, spec2) {
+    static getSpecDiffText(spec1, spec2) {
         var result = 'spec diff:';
         if (spec1.opacity !== spec2.opacity) {
             result += '\nopacity: ' + spec1.opacity + ' != ' + spec2.opacity;
@@ -163,26 +164,26 @@ define(function(require, exports, module) {
             result += '\nalign: ' + JSON.stringify(spec1.align) + ' != ' + JSON.stringify(spec2.align);
         }
         return result;
-    };
+    }
 
     /**
      * Helper function to call whenever a critical error has occurred.
      *
      * @param {String} message error-message
      */
-    LayoutUtility.error = function(message) {
+    static error(message) {
         console.log('ERROR: ' + message);
         throw message;
-    };
+    }
 
     /**
      * Helper function to call whenever a warning error has occurred.
      *
      * @param {String} message warning-message
      */
-    LayoutUtility.warning = function(message) {
+    static warning(message) {
         console.log('WARNING: ' + message);
-    };
+    }
 
     /**
      * Helper function to log 1 or more arguments. All the arguments
@@ -190,7 +191,7 @@ define(function(require, exports, module) {
      *
      * @param {String|Array|Object} args arguments to stringify and concatenate
      */
-    LayoutUtility.log = function(args) {
+    static log(args) {
         var message = '';
         for (var i = 0; i < arguments.length; i++) {
             var arg = arguments[i];
@@ -202,7 +203,7 @@ define(function(require, exports, module) {
             }
         }
         console.log(message);
-    };
+    }
 
     /**
      * Combines two sets of options into a single set.
@@ -212,7 +213,7 @@ define(function(require, exports, module) {
      * @param {Bool} [forceClone] ensures that a clone is returned rather that one of the original options objects
      * @return {Object} Combined options
      */
-    LayoutUtility.combineOptions = function(options1, options2, forceClone) {
+    static combineOptions(options1, options2, forceClone) {
         if (options1 && !options2 && !forceClone) {
             return options1;
         }
@@ -226,7 +227,7 @@ define(function(require, exports, module) {
             }
         }
         return options;
-    };
+    }
 
     /**
      * Registers a layout-helper so it can be used as a layout-literal for
@@ -255,7 +256,7 @@ define(function(require, exports, module) {
      * @param {String} name name of the helper (e.g. 'dock')
      * @param {Function} Helper Helper to register (e.g. LayoutDockHelper)
      */
-    LayoutUtility.registerHelper = function(name, Helper) {
+    static registerHelper(name, Helper) {
         if (!Helper.prototype.parse) {
             LayoutUtility.error('The layout-helper for name "' + name + '" is required to support the "parse" method');
         }
@@ -263,16 +264,16 @@ define(function(require, exports, module) {
             LayoutUtility.warning('A layout-helper with the name "' + name + '" is already registered and will be overwritten');
         }
         this.registeredHelpers[name] = Helper;
-    };
+    }
 
     /**
      * Unregisters a layout-helper.
      *
      * @param {String} name name of the layout-helper
      */
-    LayoutUtility.unregisterHelper = function(name) {
+    static unregisterHelper(name) {
         delete this.registeredHelpers[name];
-    };
+    }
 
     /**
      * Gets a registered layout-helper by its name.
@@ -280,10 +281,7 @@ define(function(require, exports, module) {
      * @param {String} name name of the layout-helper
      * @return {Function} layout-helper or undefined
      */
-    LayoutUtility.getRegisteredHelper = function(name) {
+    static getRegisteredHelper(name) {
         return this.registeredHelpers[name];
-    };
-
-    // Layout function
-    module.exports = LayoutUtility;
-});
+    }
+}

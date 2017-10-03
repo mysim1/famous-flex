@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -18,14 +17,16 @@
  *
  * @module
  */
-define(function(require, exports, module) {
+
+
+export default class LayoutContext {
 
     /**
      * @class
      * @alias module:LayoutContext
      */
-    function LayoutContext(methods) {
-        for (var n in methods) {
+    constructor(methods) {
+        for (let n in methods) {
             this[n] = methods[n];
         }
     }
@@ -33,27 +34,27 @@ define(function(require, exports, module) {
     /**
      * {Property} Size in which to layout the renderables.
      */
-    LayoutContext.prototype.size = undefined;
+    size = undefined;
 
     /**
      * {Property} Direction in which to layout the renderables (0 = X, 1 = Y).
      */
-    LayoutContext.prototype.direction = undefined;
+    direction = undefined;
 
     /**
      * {Property} {Number} Scrolling offset at which to start laying out next/prev renderables.
      */
-    LayoutContext.prototype.scrollOffset = undefined;
+    scrollOffset = undefined;
 
     /**
      * {Property} {Number} Top/left boundary to which to layout renderables (default: 0).
      */
-    LayoutContext.prototype.scrollStart = undefined;
+    scrollStart = undefined;
 
     /**
      * {Property} {Number} Bottom/right boundary to which to continue laying out renderables.
      */
-    LayoutContext.prototype.scrollEnd = undefined;
+    scrollEnd = undefined;
 
     /**
      * Get the context-node for the next renderable in the data-source. When
@@ -80,9 +81,9 @@ define(function(require, exports, module) {
      *
      * @return {Object} context-node or undefined
      */
-    LayoutContext.prototype.next = function() {
+    next() {
         // dummy implementation, override in constructor
-    };
+    }
 
     /**
      * Get the context-node for the previous renderable in the data-source. When
@@ -109,9 +110,9 @@ define(function(require, exports, module) {
      *
      * @return {Object} context-node or undefined
      */
-    LayoutContext.prototype.prev = function() {
+    prev() {
         // dummy implementation, override in constructor
-    };
+    }
 
     /**
      * Get the context-node for a renderable with a specific id. This function
@@ -189,9 +190,9 @@ define(function(require, exports, module) {
      * @param {Object|String} node context-node or node-id
      * @return {Object} context-node or undefined
      */
-    LayoutContext.prototype.get = function(node) {
+    get(node) {
         // dummy implementation, override in constructor
-    };
+    }
 
     /**
      * Set the size, origin, align, translation, scale, rotate, skew & opacity for a context-node.
@@ -216,9 +217,9 @@ define(function(require, exports, module) {
      * @param {Object|String} node context-node or node-id
      * @param {Object} set properties: size, origin, align, translate, scale, rotate, skew & opacity
      */
-    LayoutContext.prototype.set = function(node, set) {
+    set(node, set) {
         // dummy implementation, override in constructor
-    };
+    }
 
     /**
      * Resolve the size of a context-node by accessing the `getSize` function
@@ -254,9 +255,7 @@ define(function(require, exports, module) {
      * @param {Object|String} node context-node, node-id or array-element
      * @return {Size} size of the node
      */
-    LayoutContext.prototype.resolveSize = function(node) {
+    resolveSize(node) {
         // dummy implementation, override in constructor
-    };
-
-    module.exports = LayoutContext;
-});
+    }
+}

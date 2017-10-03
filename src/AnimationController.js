@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -13,17 +12,18 @@
  *
  * @module
  */
-define(function(require, exports, module) {
 
-    // import dependencies
-    var View = require('famous/core/View');
-    var LayoutController = require('./LayoutController');
-    var Transform = require('famous/core/Transform');
-    var Modifier = require('famous/core/Modifier');
-    var StateModifier = require('famous/modifiers/StateModifier');
-    var RenderNode = require('famous/core/RenderNode');
-    var Timer = require('famous/utilities/Timer');
-    var Easing = require('famous/transitions/Easing');
+import View from 'famous/core/View.js';
+import LayoutController from './LayoutController.js';
+import Transform from 'famous/core/Transform.js';
+import Modifier from 'famous/core/Modifier.js';
+import StateModifier from 'famous/modifiers/StateModifier.js';
+import RenderNode from 'famous/core/RenderNode.js';
+import Timer from 'famous/utilities/Timer.js';
+import Easing from 'famous/transitions/Easing.js';
+
+
+export default class AnimationController extends View {
 
     /**
      * @class
@@ -45,23 +45,21 @@ define(function(require, exports, module) {
      * @param {Array} [options.transfer.items] Ids (key/value) pairs (source-id/target-id) of the renderables that should be transferred.
      * @alias module:AnimationController
      */
-    function AnimationController(options) {
-        View.apply(this, arguments);
+    constructor(options) {
+      super(...arguments);
 
-        this._size = [0, 0];
-        _createLayout.call(this);
+      this._size = [0, 0];
+      this._createLayout();
 
-        if (options) {
-            this.setOptions(options);
-        }
+      if (options) {
+          this.setOptions(options);
+      }
     }
-    AnimationController.prototype = Object.create(View.prototype);
-    AnimationController.prototype.constructor = AnimationController;
 
     /**
      * Out of the box supported animations.
      */
-    AnimationController.Animation = {
+    static Animation = {
         Slide: {
             Left: function(show, size) {
                 return {transform: Transform.translate(show ? size[0] : -size[0], 0, 0)};
@@ -110,24 +108,9 @@ define(function(require, exports, module) {
                  origin: [0.5, 0.5]*/
             };
         }
-        /*,
-         Flip: {
-         Left: function(show, size) {
-         return {transform: Transform.rotate(0, show ? Math.PI : -Math.PI, 0)};
-         },
-         Right: function(show, size) {
-         return {transform: Transform.rotate(0, show ? -Math.PI : Math.PI, 0)};
-         },
-         Up: function(show, size) {
-         return {transform: Transform.rotate(show ? Math.PI : -Math.PI, 0, 0)};
-         },
-         Down: function(show, size) {
-         return {transform: Transform.rotate(show ? -Math.PI : Math.PI, 0, 0)};
-         }
-         }*/
-    };
+    }
 
-    AnimationController.DEFAULT_OPTIONS = {
+    static DEFAULT_OPTIONS = {
         transition: {duration: 400, curve: Easing.inOutQuad},
         animation: AnimationController.Animation.Fade,
         show: {
@@ -149,9 +132,9 @@ define(function(require, exports, module) {
         },
         zIndexOffset: 0,
         keepHiddenViewsInDOMCount: 0
-    };
+    }
 
-    var ItemState = {
+    static ItemState = {
         NONE: 0,
         HIDE: 1,
         HIDING: 2,
@@ -160,13 +143,13 @@ define(function(require, exports, module) {
         SHOWING: 5,
         VISIBLE: 6,
         QUEUED: 7
-    };
+    }
 
     /**
      * Stacks the renderables on top of each other
      * with a z-translation of this.options.zIndexOffset.
      */
-    function ViewStackLayout(context, options) {
+    ViewStackLayout(context, options) {
         var set = {
             size: context.size,
             translate: [0, 0, 0]
@@ -221,25 +204,25 @@ define(function(require, exports, module) {
     /**
      * Creates the view-stack layout.
      */
-    function _createLayout() {
+    _createLayout() {
         this._renderables = {
             views: [],
             transferables: []
         };
         this._viewStack = [];
         this.layout = new LayoutController({
-            layout: ViewStackLayout.bind(this),
+            layout: this.ViewStackLayout,
             layoutOptions: this.options,
             dataSource: this._renderables
         });
         this.add(this.layout);
-        this.layout.on('layoutend', _processAnimations.bind(this));
+        this.layout.on('layoutend', this._processAnimations);
     }
 
     /**
      * Gets the spec from a spec.
      */
-    function _getViewSpec(item, view, id, callback) {
+    _getViewSpec(item, view, id, callback) {
         if (!item.view) {
             return;
         }
@@ -255,7 +238,7 @@ define(function(require, exports, module) {
     /**
      * Gets the transferable delegate for the given id.
      */
-    function _getTransferable(item, view, id) {
+    _getTransferable(item, view, id) {
         // 1. If view supports getTransferable, use that
         if (view.getTransferable) {
             return view.getTransferable(id);
@@ -276,7 +259,7 @@ define(function(require, exports, module) {
         }
         // 3. If view has an embedded layout, use that as fallback
         if (view.layout) {
-            return _getTransferable.call(this, item, view.layout, id);
+            return this._getTransferable(item, view.layout, id);
         }
     }
 
@@ -284,7 +267,7 @@ define(function(require, exports, module) {
      * Begins visual transfer or renderables from the previous item
      * to the new item.
      */
-    function _initTransferableAnimations(item, prevItem, callback) {
+    _initTransferableAnimations(item, prevItem, callback) {
         var callbackCount = 0;
         function waitForAll() {
             callbackCount--;
@@ -293,7 +276,7 @@ define(function(require, exports, module) {
             }
         }
         for (var sourceId in item.options.transfer.items) {
-            if (_initTransferableAnimation.call(this, item, prevItem, sourceId, waitForAll)) {
+            if (this._initTransferableAnimation(item, prevItem, sourceId, waitForAll)) {
                 callbackCount++;
             }
         }
@@ -301,20 +284,21 @@ define(function(require, exports, module) {
             callback();
         }
     }
-    function _initTransferableAnimation(item, prevItem, sourceId, callback) {
+
+    _initTransferableAnimation(item, prevItem, sourceId, callback) {
         var target = item.options.transfer.items[sourceId];
         var transferable = {};
-        transferable.source = _getTransferable.call(this, prevItem, prevItem.view, sourceId);
+        transferable.source = this._getTransferable(prevItem, prevItem.view, sourceId);
         if (Array.isArray(target)) {
             for (var i = 0; i < target.length; i++) {
-                transferable.target = _getTransferable.call(this, item, item.view, target[i]);
+                transferable.target = this._getTransferable(item, item.view, target[i]);
                 if (transferable.target) {
                     break;
                 }
             }
         }
         else {
-            transferable.target = _getTransferable.call(this, item, item.view, target);
+            transferable.target = this._getTransferable(item, item.view, target);
         }
         if (transferable.source && transferable.target) {
             transferable.source.getSpec(function(sourceSpec) {
@@ -362,7 +346,8 @@ define(function(require, exports, module) {
             return false;
         }
     }
-    function _startTransferableAnimations(item, callback) {
+
+    _startTransferableAnimations(item, callback) {
         for (var j = 0; j < item.transferables.length; j++) {
             var transferable = item.transferables[j];
             transferable.mod.halt();
@@ -400,7 +385,7 @@ define(function(require, exports, module) {
      * transferable animations should be ended. This returns
      * the renderables to their original views.
      */
-    function _endTransferableAnimations(item) {
+    _endTransferableAnimations(item) {
         for (var j = 0; j < item.transferables.length; j++) {
             var transferable = item.transferables[j];
             for (var i = 0; i < this._renderables.transferables.length; i++) {
@@ -426,13 +411,13 @@ define(function(require, exports, module) {
             switch (item.state) {
                 case ItemState.HIDE:
                     item.state = ItemState.HIDING;
-                    _initHideAnimation.call(this, item, prevItem, event.size);
-                    _updateState.call(this);
+                    this._initHideAnimation(item, prevItem, event.size);
+                    this._updateState();
                     break;
                 case ItemState.SHOW:
                     item.state = ItemState.SHOWING;
-                    _initShowAnimation.call(this, item, prevItem, event.size);
-                    _updateState.call(this);
+                    this._initShowAnimation(item, prevItem, event.size);
+                    this._updateState();
                     break;
             }
             prevItem = item;
@@ -442,7 +427,7 @@ define(function(require, exports, module) {
     /**
      * Starts the view animation.
      */
-    function _initShowAnimation(item, prevItem, size) {
+    _initShowAnimation(item, prevItem, size) {
         var spec = item.options.show.animation ? item.options.show.animation.call(undefined, true, size) : {};
         item.startSpec = spec;
         item.endSpec = {
@@ -467,7 +452,7 @@ define(function(require, exports, module) {
             item.wait.then(startShowAnimation, startShowAnimation);
         } : startShowAnimation;
         if (prevItem) {
-            _initTransferableAnimations.call(this, item, prevItem, waitAndShow);
+            this._initTransferableAnimations(item, prevItem, waitAndShow);
         }
         else {
             waitAndShow();
@@ -477,7 +462,7 @@ define(function(require, exports, module) {
     /**
      * Starts the show animation whenever init has completed.
      */
-    function _startShowAnimation(item, spec) {
+    _startShowAnimation(item, spec) {
         if (!item.halted) {
             var callback = item.showCallback;
             if (spec.transform) {
@@ -488,14 +473,14 @@ define(function(require, exports, module) {
                 item.mod.setOpacity(1, item.options.show.transition, callback);
                 callback = undefined;
             }
-            _startTransferableAnimations.call(this, item, callback);
+            this._startTransferableAnimations(item, callback);
         }
     }
 
     /**
      * Helper function for interpolating between start/end state based on percentage.
      */
-    function _interpolate(start, end, perc) {
+    static _interpolate(start, end, perc) {
         return start + ((end - start) * perc);
     }
 
@@ -503,7 +488,7 @@ define(function(require, exports, module) {
      * Halts a item at a given frame. The frame is provided as a percentage
      * of the whole transition.
      */
-    function _haltItemAtFrame(item, perc) {
+    static _haltItemAtFrame(item, perc) {
         item.mod.halt();
         item.halted = true;
         if (item.startSpec && (perc !== undefined)) {
@@ -523,7 +508,7 @@ define(function(require, exports, module) {
     /**
      * Waits for the animation to start.
      */
-    function _initHideAnimation(item, prevItem, size) {
+    _initHideAnimation(item, prevItem, size) {
         var startHideAnimation = _startHideAnimation.bind(this, item, prevItem, size);
         if (item.wait) {
             item.wait.then(startHideAnimation, startHideAnimation);
@@ -536,7 +521,7 @@ define(function(require, exports, module) {
     /**
      * Starts the hide animation.
      */
-    function _startHideAnimation(item, prevItem, size) {
+    static _startHideAnimation(item, prevItem, size) {
         var spec = item.options.hide.animation ? item.options.hide.animation.call(undefined, false, size) : {};
         item.endSpec = spec;
         item.startSpec = {
@@ -563,7 +548,7 @@ define(function(require, exports, module) {
     /**
      * Sets the options for an item.
      */
-    function _setItemOptions(item, options, callback) {
+    _setItemOptions(item, options, callback) {
         item.options = {
             show: {
                 transition: this.options.show.transition || this.options.transition,
@@ -593,110 +578,110 @@ define(function(require, exports, module) {
             item.options.transfer.zIndex = (options.transfer && (options.transfer.zIndex !== undefined)) ? options.transfer.zIndex : item.options.transfer.zIndex;
             item.options.transfer.fastResize = (options.transfer && (options.transfer.fastResize !== undefined)) ? options.transfer.fastResize : item.options.transfer.fastResize;
         }
-        item.showCallback = function() {
+        item.showCallback = () => {
             item.showCallback = undefined;
             item.state = ItemState.VISIBLE;
-            _updateState.call(this);
-            _endTransferableAnimations.call(this, item);
+            this._updateState();
+            this._endTransferableAnimations(item);
             item.endSpec = undefined;
             item.startSpec = undefined;
             if (callback) {
                 callback();
             }
-        }.bind(this);
+        };
     }
 
     /**
      * Updates the state.
      */
-    function _updateState() {
-        var prevItem;
-        var invalidated = false;
-        var hiddenViewCount = 0;
-        var i = 0;
-        while (i < this._viewStack.length) {
-            if (this._viewStack[i].state === ItemState.HIDDEN) {
-                hiddenViewCount++;
-                for (var j = 0; j < this._viewStack.length; j++) {
-                    if ((this._viewStack[j].state !== ItemState.HIDDEN) &&
-                        (this._viewStack[j].view === this._viewStack[i].view)) {
-                        this._viewStack[i].view = undefined;
-                        this._renderables.views.splice(i, 1);
-                        this._viewStack.splice(i, 1);
-                        i--;
-                        hiddenViewCount--;
-                        break;
-                    }
-                }
-            }
-            i++;
-        }
-        while (hiddenViewCount > this.options.keepHiddenViewsInDOMCount) {
-            this._viewStack[0].view = undefined;
-            this._renderables.views.splice(0, 1);
-            this._viewStack.splice(0, 1);
-            hiddenViewCount--;
-        }
-        for (i = hiddenViewCount; i < (Math.min(this._viewStack.length - hiddenViewCount, 2) + hiddenViewCount); i++) {
-            var item = this._viewStack[i];
-            if (item.state === ItemState.QUEUED) {
-                if (!prevItem ||
-                    (prevItem.state === ItemState.VISIBLE) ||
-                    (prevItem.state === ItemState.HIDING)) {
-                    if (prevItem && (prevItem.state === ItemState.VISIBLE)) {
-                        prevItem.state = ItemState.HIDE;
-                        prevItem.wait = item.wait;
-                    }
-                    item.state = ItemState.SHOW;
-                    invalidated = true;
-                }
-                break;
-            }
-            else if ((item.state === ItemState.VISIBLE) && item.hide) {
-                item.state = ItemState.HIDE;
-            }
-            if ((item.state === ItemState.SHOW) || (item.state === ItemState.HIDE)) {
-                this.layout.reflowLayout();
-            }
-            prevItem = item;
-        }
-        if (invalidated) {
-            _updateState.call(this);
-            this.layout.reflowLayout();
-        }
+    _updateState() {
+      var prevItem;
+      var invalidated = false;
+      var hiddenViewCount = 0;
+      var i = 0;
+      while (i < this._viewStack.length) {
+          if (this._viewStack[i].state === ItemState.HIDDEN) {
+              hiddenViewCount++;
+              for (var j = 0; j < this._viewStack.length; j++) {
+                  if ((this._viewStack[j].state !== ItemState.HIDDEN) &&
+                      (this._viewStack[j].view === this._viewStack[i].view)) {
+                      this._viewStack[i].view = undefined;
+                      this._renderables.views.splice(i, 1);
+                      this._viewStack.splice(i, 1);
+                      i--;
+                      hiddenViewCount--;
+                      break;
+                  }
+              }
+          }
+          i++;
+      }
+      while (hiddenViewCount > this.options.keepHiddenViewsInDOMCount) {
+          this._viewStack[0].view = undefined;
+          this._renderables.views.splice(0, 1);
+          this._viewStack.splice(0, 1);
+          hiddenViewCount--;
+      }
+      for (i = hiddenViewCount; i < (Math.min(this._viewStack.length - hiddenViewCount, 2) + hiddenViewCount); i++) {
+          var item = this._viewStack[i];
+          if (item.state === ItemState.QUEUED) {
+              if (!prevItem ||
+                  (prevItem.state === ItemState.VISIBLE) ||
+                  (prevItem.state === ItemState.HIDING)) {
+                  if (prevItem && (prevItem.state === ItemState.VISIBLE)) {
+                      prevItem.state = ItemState.HIDE;
+                      prevItem.wait = item.wait;
+                  }
+                  item.state = ItemState.SHOW;
+                  invalidated = true;
+              }
+              break;
+          }
+          else if ((item.state === ItemState.VISIBLE) && item.hide) {
+              item.state = ItemState.HIDE;
+          }
+          if ((item.state === ItemState.SHOW) || (item.state === ItemState.HIDE)) {
+              this.layout.reflowLayout();
+          }
+          prevItem = item;
+      }
+      if (invalidated) {
+          this._updateState();
+          this.layout.reflowLayout();
+      }
     }
 
-    function _resume() {
-        for (var i = 0; i < Math.min(this._viewStack.length, 2); i++) {
-            var item = this._viewStack[i];
-            if (item.halted) {
-                item.halted = false;
-                if (item.endSpec) {
-                    var callback;
-                    switch (item.state) {
-                        case ItemState.HIDE:
-                        case ItemState.HIDING:
-                            callback = item.hideCallback;
-                            break;
-                        case ItemState.SHOW:
-                        case ItemState.SHOWING:
-                            callback = item.showCallback;
-                            break;
-                    }
-                    item.mod.halt();
-                    if (item.endSpec.transform) {
-                        item.mod.setTransform(item.endSpec.transform, item.options.show.transition, callback);
-                        callback = undefined;
-                    }
-                    if (item.endSpec.opacity !== undefined) {
-                        item.mod.setOpacity(item.endSpec.opacity, item.options.show.transition, callback);
-                    }
-                    if (callback) {
-                        callback();
-                    }
-                }
-            }
-        }
+    _resume() {
+      for (var i = 0; i < Math.min(this._viewStack.length, 2); i++) {
+          var item = this._viewStack[i];
+          if (item.halted) {
+              item.halted = false;
+              if (item.endSpec) {
+                  var callback;
+                  switch (item.state) {
+                      case ItemState.HIDE:
+                      case ItemState.HIDING:
+                          callback = item.hideCallback;
+                          break;
+                      case ItemState.SHOW:
+                      case ItemState.SHOWING:
+                          callback = item.showCallback;
+                          break;
+                  }
+                  item.mod.halt();
+                  if (item.endSpec.transform) {
+                      item.mod.setTransform(item.endSpec.transform, item.options.show.transition, callback);
+                      callback = undefined;
+                  }
+                  if (item.endSpec.opacity !== undefined) {
+                      item.mod.setOpacity(item.endSpec.opacity, item.options.show.transition, callback);
+                  }
+                  if (callback) {
+                      callback();
+                  }
+              }
+          }
+      }
     }
 
     /**
@@ -724,8 +709,8 @@ define(function(require, exports, module) {
      * @param {Function} [callback] Function that is called on completion.
      * @return {AnimationController} this
      */
-    AnimationController.prototype.show = function(renderable, options, callback) {
-        _resume.call(this, renderable);
+    show(renderable, options, callback) {
+        this._resume(renderable);
         if (!renderable) {
             return this.hide(options, callback);
         }
@@ -734,8 +719,8 @@ define(function(require, exports, module) {
             item.hide = false;
             if (item.state === ItemState.HIDE) {
                 item.state = ItemState.QUEUED;
-                _setItemOptions.call(this, item, options, callback);
-                _updateState.call(this);
+                this._setItemOptions(item, options, callback);
+                this._updateState();
             }
             else if (item.state === ItemState.HIDING) {
                 this.abort(callback);
@@ -764,18 +749,18 @@ define(function(require, exports, module) {
         };
         item.node = new RenderNode(item.mod);
         item.node.add(renderable);
-        _setItemOptions.call(this, item, options, callback);
-        item.hideCallback = function() {
+        this._setItemOptions(item, options, callback);
+        item.hideCallback = () => {
             item.hideCallback = undefined;
             item.state = ItemState.HIDDEN;
-            _updateState.call(this);
+            this._updateState();
             this.layout.reflowLayout();
-        }.bind(this);
+        };
         this._renderables.views.push(item.node);
         this._viewStack.push(item);
-        _updateState.call(this);
+        this._updateState();
         return this;
-    };
+    }
 
     /**
      * Hides the current view with an animation.
@@ -786,8 +771,8 @@ define(function(require, exports, module) {
      * @param {Function} [callback] Function that is called an completion.
      * @return {AnimationController} this
      */
-    AnimationController.prototype.hide = function(options, callback) {
-        _resume.call(this);
+    hide(options, callback) {
+        this._resume();
         var item = this._viewStack.length ? this._viewStack[this._viewStack.length - 1] : undefined;
         if (!item || (item.state === ItemState.HIDING)) {
             return this;
@@ -802,18 +787,18 @@ define(function(require, exports, module) {
                 item.options.hide.animation = options.animation;
             }
         }
-        item.hideCallback = function() {
+        item.hideCallback = () => {
             item.hideCallback = undefined;
             item.state = ItemState.HIDDEN;
-            _updateState.call(this);
+            this._updateState();
             this.layout.reflowLayout();
             if (callback) {
                 callback();
             }
-        }.bind(this);
-        _updateState.call(this);
+        };
+        this._updateState();
         return this;
-    };
+    }
 
     /**
      * Clears the queue of any pending show animations.
@@ -822,35 +807,35 @@ define(function(require, exports, module) {
      * @param {Number} [framePerc] Frame at which to freeze the animation (in percentage).
      * @return {AnimationController} this
      */
-    AnimationController.prototype.halt = function(stopAnimation, framePerc) {
-        var item;
-        for (var i = 0; i < this._viewStack.length; i++) {
-            if (stopAnimation) {
-                item = this._viewStack[i];
-                switch (item.state) {
-                    case ItemState.SHOW:
-                    case ItemState.SHOWING:
-                    case ItemState.HIDE:
-                    case ItemState.HIDING:
-                    case ItemState.VISIBLE:
-                        _haltItemAtFrame(item, framePerc);
-                        break;
-                }
-            }
-            else {
-                item = this._viewStack[this._viewStack.length - 1];
-                if ((item.state === ItemState.QUEUED) || (item.state === ItemState.SHOW)) {
-                    this._renderables.views.splice(this._viewStack.length - 1, 1);
-                    this._viewStack.splice(this._viewStack.length - 1, 1);
-                    item.view = undefined;
-                }
-                else {
-                    break;
-                }
-            }
-        }
-        return this;
-    };
+    halt(stopAnimation, framePerc) {
+      var item;
+      for (var i = 0; i < this._viewStack.length; i++) {
+          if (stopAnimation) {
+              item = this._viewStack[i];
+              switch (item.state) {
+                  case ItemState.SHOW:
+                  case ItemState.SHOWING:
+                  case ItemState.HIDE:
+                  case ItemState.HIDING:
+                  case ItemState.VISIBLE:
+                      _haltItemAtFrame(item, framePerc);
+                      break;
+              }
+          }
+          else {
+              item = this._viewStack[this._viewStack.length - 1];
+              if ((item.state === ItemState.QUEUED) || (item.state === ItemState.SHOW)) {
+                  this._renderables.views.splice(this._viewStack.length - 1, 1);
+                  this._viewStack.splice(this._viewStack.length - 1, 1);
+                  item.view = undefined;
+              }
+              else {
+                  break;
+              }
+          }
+      }
+      return this;
+    }
 
     /**
      * Aborts the currently active show or hide operation, effectively
@@ -859,93 +844,91 @@ define(function(require, exports, module) {
      * @param {Function} [callback] Function that is called on completion.
      * @return {AnimationController} this
      */
-    AnimationController.prototype.abort = function(callback) {
-        var item;
-        if ((this._viewStack.length >= 2) && (this._viewStack[0].state === ItemState.HIDING) && (this._viewStack[1].state === ItemState.SHOWING)) {
-            var prevItem = this._viewStack[0];
-            item = this._viewStack[1];
-            var swapSpec;
+    abort(callback) {
+      var item;
+      if ((this._viewStack.length >= 2) && (this._viewStack[0].state === ItemState.HIDING) && (this._viewStack[1].state === ItemState.SHOWING)) {
+          var prevItem = this._viewStack[0];
+          item = this._viewStack[1];
+          var swapSpec;
 
-            item.halted = true;
-            swapSpec = item.endSpec;
-            item.endSpec = item.startSpec;
-            item.startSpec = swapSpec;
-            item.state = ItemState.HIDING;
-            item.hideCallback = function() {
-                item.hideCallback = undefined;
-                item.state = ItemState.HIDDEN;
-                _updateState.call(this);
-                this.layout.reflowLayout();
-            }.bind(this);
+          item.halted = true;
+          swapSpec = item.endSpec;
+          item.endSpec = item.startSpec;
+          item.startSpec = swapSpec;
+          item.state = ItemState.HIDING;
+          item.hideCallback = () => {
+              item.hideCallback = undefined;
+              item.state = ItemState.HIDDEN;
+              this._updateState();
+              this.layout.reflowLayout();
+          };
 
-            prevItem.halted = true;
-            swapSpec = prevItem.endSpec;
-            prevItem.endSpec = prevItem.startSpec;
-            prevItem.startSpec = swapSpec;
-            prevItem.state = ItemState.SHOWING;
-            prevItem.showCallback = function() {
-                prevItem.showCallback = undefined;
-                prevItem.state = ItemState.VISIBLE;
-                _updateState.call(this);
-                _endTransferableAnimations.call(this, prevItem);
-                prevItem.endSpec = undefined;
-                prevItem.startSpec = undefined;
-                if (callback) {
-                    callback();
-                }
-            }.bind(this);
+          prevItem.halted = true;
+          swapSpec = prevItem.endSpec;
+          prevItem.endSpec = prevItem.startSpec;
+          prevItem.startSpec = swapSpec;
+          prevItem.state = ItemState.SHOWING;
+          prevItem.showCallback = () => {
+              prevItem.showCallback = undefined;
+              prevItem.state = ItemState.VISIBLE;
+              this._updateState();
+              this._endTransferableAnimations(prevItem);
+              prevItem.endSpec = undefined;
+              prevItem.startSpec = undefined;
+              if (callback) {
+                  callback();
+              }
+          };
 
-            _resume.call(this);
-        }
-        else if ((this._viewStack.length === 1) && (this._viewStack[0].state === ItemState.HIDING)) {
-            item = this._viewStack[0];
-            item.halted = true;
-            swapSpec = item.endSpec;
-            item.endSpec = item.startSpec;
-            item.startSpec = swapSpec;
-            item.state = ItemState.SHOWING;
-            item.showCallback = function() {
-                item.showCallback = undefined;
-                item.state = ItemState.VISIBLE;
-                _updateState.call(this);
-                _endTransferableAnimations.call(this, item);
-                item.endSpec = undefined;
-                item.startSpec = undefined;
-                if (callback) {
-                    callback();
-                }
-            }.bind(this);
+          this._resume();
+      }
+      else if ((this._viewStack.length === 1) && (this._viewStack[0].state === ItemState.HIDING)) {
+          item = this._viewStack[0];
+          item.halted = true;
+          swapSpec = item.endSpec;
+          item.endSpec = item.startSpec;
+          item.startSpec = swapSpec;
+          item.state = ItemState.SHOWING;
+          item.showCallback = () => {
+              item.showCallback = undefined;
+              item.state = ItemState.VISIBLE;
+              this._updateState();
+              this._endTransferableAnimations(item);
+              item.endSpec = undefined;
+              item.startSpec = undefined;
+              if (callback) {
+                  callback();
+              }
+          };
 
-            _resume.call(this);
-        }
-        return this;
-    };
+          this._resume();
+      }
+      return this;
+    }
 
     /**
      * Gets the currently visible or being shown renderable.
      *
      * @return {Renderable} currently visible view/surface
      */
-    AnimationController.prototype.get = function() {
-        for (var i = 0; i < this._viewStack.length; i++) {
-            var item = this._viewStack[i];
-            if ((item.state === ItemState.VISIBLE) ||
-                (item.state === ItemState.SHOW) ||
-                (item.state === ItemState.SHOWING)) {
-                return item.view;
-            }
-        }
-        return undefined;
-    };
+    get() {
+      for (var i = 0; i < this._viewStack.length; i++) {
+          var item = this._viewStack[i];
+          if ((item.state === ItemState.VISIBLE) ||
+              (item.state === ItemState.SHOW) ||
+              (item.state === ItemState.SHOWING)) {
+              return item.view;
+          }
+      }
+      return undefined;
+    }
 
     /**
      * Gets the size of the view.
      *
      * @return {Array.Number} size
      */
-    AnimationController.prototype.getSize = function() {
-        return this._size || this.options.size;
-    };
-
-    module.exports = AnimationController;
-});
+    getSize() {
+      return this._size || this.options.size;
+    }
+}

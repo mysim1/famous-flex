@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -13,18 +12,19 @@
  *
  * @module
  */
-define(function (require, exports, module) {
 
-    // import dependencies
-    var Transform = require('famous/core/Transform');
-    var LayoutUtility = require('./LayoutUtility');
+import Transform from 'famous/core/Transform.js';
+import Transform from './LayoutUtility.js';
+
+
+export default class LayoutNode {
 
     /**
      * @class
      * @param {Object} renderNode Render-node which this layout-node represents
      * @alias module:LayoutNode
      */
-    function LayoutNode(renderNode, spec) {
+    constructor(renderNode, spec) {
         this.renderNode = renderNode;
         this._spec = spec ? LayoutUtility.cloneSpec(spec) : {};
         this._spec.renderNode = renderNode; // also store in spec
@@ -36,42 +36,42 @@ define(function (require, exports, module) {
     /**
      * Called to update the underlying render-node
      */
-    LayoutNode.prototype.setRenderNode = function (renderNode) {
+    setRenderNode(renderNode) {
         this.renderNode = renderNode;
         this._spec.renderNode = renderNode;
-    };
+    }
 
     /**
      * Called to update the options for the node
      */
-    LayoutNode.prototype.setOptions = function (options) {
+    setOptions(options) {
         // override to implement
-    };
+    }
 
     /**
      * Called when the node is destroyed
      */
-    LayoutNode.prototype.destroy = function () {
+    destroy() {
         this.renderNode = undefined;
         this._spec.renderNode = undefined;
         this._viewSequence = undefined;
-    };
+    }
 
     /**
      * Reset the end-state. This function is called on all layout-nodes prior to
      * calling the layout-function. So that the layout-function starts with a clean slate.
      */
-    LayoutNode.prototype.reset = function () {
+    reset() {
         this._invalidated = false;
         this.trueSizeRequested = false;
-    };
+    }
 
     /**
      * Set the spec of the node
      *
      * @param {Object} spec
      */
-    LayoutNode.prototype.setSpec = function (spec) {
+    setSpec(spec) {
         this._specModified = true;
         if (spec.align) {
             if (!spec.align) {
@@ -120,14 +120,14 @@ define(function (require, exports, module) {
             this._spec.transform = undefined;
         }
         this._spec.opacity = spec.opacity;
-    };
+    }
 
     /**
      * Set the content of the node
      *
      * @param {Object} set
      */
-    LayoutNode.prototype.set = function (set, size) {
+    set(set, size) {
         this._invalidated = true;
         this._specModified = true;
         this._removing = false;
@@ -181,23 +181,21 @@ define(function (require, exports, module) {
             this._spec.transform = undefined;
         }
         this.scrollLength = set.scrollLength;
-    };
+    }
 
     /**
      * Creates the render-spec
      */
-    LayoutNode.prototype.getSpec = function () {
+    getSpec() {
         this._specModified = false;
         this._spec.removed = !this._invalidated;
         return this._spec;
-    };
+    }
 
     /**
      * Marks the node for removal
      */
-    LayoutNode.prototype.remove = function (removeSpec) {
+    remove(removeSpec) {
         this._removing = true;
-    };
-
-    module.exports = LayoutNode;
-});
+    }
+}

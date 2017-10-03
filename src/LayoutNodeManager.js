@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014/2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -23,18 +22,17 @@
  * @module
  */
 
-define(function(require, exports, module) {
+import LayoutContext from './LayoutContext.js';
+import LayoutUtility from './LayoutUtility.js';
+import Surface from 'famous/core/Surface.js';
+import RenderNode from 'famous/core/RenderNode.js';
+import FlowLayoutNode from './FlowLayoutNode.js';
+import LayoutNode from './LayoutNode.js';
 
-    // import dependencies
-    var LayoutContext = require('./LayoutContext');
-    var Map = require('es6-map');
-    var LayoutUtility = require('./LayoutUtility');
-    var Surface = require('famous/core/Surface');
-    var RenderNode = require('famous/core/RenderNode');
-    var FlowLayoutNode = require('./FlowLayoutNode.js');
-    var LayoutNode = require('./LayoutNode.js');
 
-    var MAX_POOL_SIZE = 100;
+export default class LayoutNodeManager {
+
+    static MAX_POOL_SIZE = 100;
 
     /**
      * @class
@@ -43,20 +41,20 @@ define(function(require, exports, module) {
      * @param {Boolean} partialFlow Sets
      * @alias module:LayoutNodeManager
      */
-    function LayoutNodeManager(LayoutNode, initLayoutNodeFn, partialFlow) {
+    constructor(LayoutNode, initLayoutNodeFn, partialFlow) {
         this.LayoutNode = LayoutNode;
         this._partialFlow = partialFlow || false;
         this._initLayoutNodeFn = initLayoutNodeFn;
         this._layoutCount = 0;
         this._context = new LayoutContext({
-            next: _contextNext.bind(this),
-            prev: _contextPrev.bind(this),
-            get: _contextGet.bind(this),
-            set: _contextSet.bind(this),
-            resolveSize: _contextResolveSize.bind(this),
-            moveStartSequence: _moveStartSequence.bind(this),
+            next: this._contextNext,
+            prev: this._contextPrev,
+            get: this._contextGet,
+            set: this._contextSet,
+            resolveSize: this._contextResolveSize,
+            moveStartSequence: this._moveStartSequence,
             size: [0, 0],
-            setCoveredScrollHeight: _setCoveredScrollHeight.bind(this)
+            setCoveredScrollHeight: this._setCoveredScrollHeight
             //,cycle: 0
         });
         this._contextState = {
@@ -88,7 +86,7 @@ define(function(require, exports, module) {
      * @return {LayoutContext} context which can be passed to the layout-function
      */
 
-    LayoutNodeManager.prototype.prepareForLayout = function(viewSequence, nodesById, contextData) {
+    prepareForLayout(viewSequence, nodesById, contextData) {
         this._startSequence = null;
         this._sequenceMovedDirection = 0;
         // Reset all nodes
@@ -141,7 +139,7 @@ define(function(require, exports, module) {
         context.scrollEnd = contextData.scrollEnd || context.size[context.direction];
         //context.cycle++;
         return context;
-    };
+    }
 
     /**
      * When the layout-function no longer lays-out the node, then it is not longer
@@ -150,7 +148,7 @@ define(function(require, exports, module) {
      *
      * @param {Spec} [removeSpec] spec towards which the no longer layed-out nodes are animated
      */
-    LayoutNodeManager.prototype.removeNonInvalidatedNodes = function(removeSpec) {
+    removeNonInvalidatedNodes(removeSpec) {
         var node = this._first;
         while (node) {
 
@@ -163,33 +161,33 @@ define(function(require, exports, module) {
             // Move to next node
             node = node._next;
         }
-    };
+    }
 
-    LayoutNodeManager.prototype.getPrevSequence= function() {
+    getPrevSequence= function() {
         return this._contextState.prevSequence;
-    };
+    }
 
-    LayoutNodeManager.prototype.getLastRenderNodeInSequence = function() {
+    getLastRenderNodeInSequence() {
         return this._contextState.startSequence.getTail().get();
-    };
+    }
 
-    LayoutNodeManager.prototype.getFirstRenderedNode = function() {
+    getFirstRenderedNode() {
         return this._contextState.firstNode;
-    };
+    }
 
-    LayoutNodeManager.prototype.getLastRenderedNode = function() {
+    getLastRenderedNode() {
         return this._contextState.lastNode;
-    };
+    }
 
     /**
      * Cleans up any unaccessed virtual nodes that have been created by a VirtualViewSequence.
      */
 
-    LayoutNodeManager.prototype.removeVirtualViewSequenceNodes = function() {
+    removeVirtualViewSequenceNodes() {
         if (this._contextState.startSequence && this._contextState.startSequence.cleanup) {
             this._contextState.startSequence.cleanup();
         }
-    };
+    }
 
     /**
      * Builds the render-spec and destroy any layout-nodes that no longer
@@ -197,7 +195,7 @@ define(function(require, exports, module) {
      *
      * @return {Array<Object>} Object containing array of specs, array of nodes, etc
      */
-    LayoutNodeManager.prototype.buildSpecAndDestroyUnrenderedNodes = function(translate) {
+    buildSpecAndDestroyUnrenderedNodes(translate) {
         var specs = [], nodes = [];
         var result = {
             specs: specs,
@@ -213,7 +211,7 @@ define(function(require, exports, module) {
                 // Destroy node
                 var destroyNode = node;
                 node = node._next;
-                _destroyNode.call(this, destroyNode);
+                this._destroyNode(destroyNode);
 
                 // Mark as modified
                 result.modified = true;
@@ -252,7 +250,7 @@ define(function(require, exports, module) {
         this._contextState.addCount = 0;
         this._contextState.removeCount = 0;
         return result;
-    };
+    }
 
     /**
      * Get the layout-node by its renderable.
@@ -260,7 +258,7 @@ define(function(require, exports, module) {
      * @param {Object} renderable renderable
      * @return {LayoutNode} layout-node or undefined
      */
-    LayoutNodeManager.prototype.getNodeByRenderNode = function(renderable) {
+    getNodeByRenderNode(renderable) {
         var node = this._first;
         while (node) {
             if (node.renderNode === renderable) {
@@ -269,35 +267,35 @@ define(function(require, exports, module) {
             node = node._next;
         }
         return undefined;
-    };
+    }
 
     /**
      * Inserts a layout-node into the linked-list.
      *
      * @param {LayoutNode} node layout-node to insert
      */
-    LayoutNodeManager.prototype.getCoveredScrollHeight = function() {
+    getCoveredScrollHeight() {
         return this._contextState.coveredScrollHeight;
-    };
+    }
     /**
      * Inserts a layout-node into the linked-list.
      *
      * @param {LayoutNode} node layout-node to insert
      */
-    LayoutNodeManager.prototype.insertNode = function(node) {
+    insertNode(node) {
         node._next = this._first;
         if (this._first) {
             this._first._prev = node;
         }
         this._first = node;
-    };
+    }
 
     /**
      * Sets the options for all nodes.
      *
      * @param {Object} options node options
      */
-    LayoutNodeManager.prototype.setNodeOptions = function(options) {
+    setNodeOptions(options) {
         this._nodeOptions = options;
         var node = this._first;
         while (node) {
@@ -309,7 +307,7 @@ define(function(require, exports, module) {
             node.setOptions(options);
             node = node._next;
         }
-    };
+    }
 
     /**
      * Pre-allocate layout-nodes ahead of using them.
@@ -317,15 +315,15 @@ define(function(require, exports, module) {
      * @param {Number} count number of nodes to pre-allocate with the given spec
      * @param {Spec} [spec] render-spec (defined the node properties which to pre-allocate)
      */
-    LayoutNodeManager.prototype.preallocateNodes = function(count, spec) {
+    preallocateNodes(count, spec) {
         var nodes = [];
         for (var i = 0; i < count; i++) {
             nodes.push(this.createNode(undefined, spec));
         }
         for (i = 0; i < count; i++) {
-            _destroyNode.call(this, nodes[i]);
+            this._destroyNode(nodes[i]);
         }
-    };
+    }
 
     /**
      * Creates a layout-node
@@ -333,7 +331,7 @@ define(function(require, exports, module) {
      * @param {Object} renderNode render-node for whom to create a layout-node for
      * @return {LayoutNode} layout-node
      */
-    LayoutNodeManager.prototype.createNode = function(renderNode, spec) {
+    createNode(renderNode, spec) {
         var node;
         var layoutNodeClass = this.getLayoutNodeClassForRenderNode(renderNode);
         if (this._pool.layoutNodes.first) {
@@ -359,24 +357,24 @@ define(function(require, exports, module) {
         node._viewSequence = undefined;
         node._layoutCount = 0;
         if (this._initLayoutNodeFn) {
-            this._initLayoutNodeFn.call(this, node, spec);
+            this._initLayoutNodeFn(node, spec);
         }
         return node;
-    };
+    }
 
-    LayoutNodeManager.prototype.isSequenceMoved = function() {
+    isSequenceMoved() {
         return !!this._sequenceMovedDirection;
-    };
+    }
 
-    LayoutNodeManager.prototype.getMovedSequenceDirection = function() {
+    getMovedSequenceDirection() {
         return this._sequenceMovedDirection;
-    };
+    }
 
-    LayoutNodeManager.prototype.getStartSequence = function() {
+    getStartSequence() {
         return this._startSequence;
-    };
+    }
 
-    LayoutNodeManager.prototype.getLayoutNodeClassForRenderNode = function(renderNode) {
+    getLayoutNodeClassForRenderNode(renderNode) {
         if (this._partialFlow) {
             if (renderNode.isFlowy) {
                 return FlowLayoutNode;
@@ -385,19 +383,19 @@ define(function(require, exports, module) {
             }
         }
       return this.LayoutNode;
-    };
+    }
     /**
      * Removes all nodes.
      */
-    LayoutNodeManager.prototype.removeAll = function() {
+    removeAll() {
         var node = this._first;
         while (node) {
           var next = node._next;
-          _destroyNode.call(this, node);
+          this._destroyNode(node);
           node = next;
         }
         this._first = undefined;
-    };
+    }
 
     /**
      * Destroys a layout-node
@@ -427,24 +425,24 @@ define(function(require, exports, module) {
         }
     }
 
-    LayoutNodeManager.prototype.getLastRenderedNodeIndex = function() {
+    getLastRenderedNodeIndex() {
         return this._contextState.nextSequence ? this._contextState.nextSequence.getIndex() : Infinity;
-    };
+    }
 
-    LayoutNodeManager.prototype.getFirstRenderedNodeIndex = function() {
+    getFirstRenderedNodeIndex() {
         return this._contextState.prevSequence ? this._contextState.prevSequence.getIndex() : 0;
-    };
+    }
 
-    LayoutNodeManager.prototype.isNodeInCurrentBuild = function(node) {
+    isNodeInCurrentBuild(node) {
         return !!this._nodeIdInCurrentBuild.get(node);
-    };
+    }
     /**
      * Gets start layout-node for enumeration.
      *
      * @param {Bool} [next] undefined = all, true = all next, false = all previous
      * @return {LayoutNode} layout-node or undefined
      */
-    LayoutNodeManager.prototype.getStartEnumNode = function(next) {
+    getStartEnumNode(next) {
         if (next === undefined) {
             return this._first;
         }
@@ -454,7 +452,7 @@ define(function(require, exports, module) {
         else if (next === false) {
             return (this._contextState.start && !this._contextState.startPrev) ? this._contextState.start._prev : this._contextState.start;
         }
-    };
+    }
 
     /**
      * Creates or gets a layout node.
@@ -635,13 +633,14 @@ define(function(require, exports, module) {
             index: --this._contextState.prevGetIndex
         };
     }
+
     function _setCoveredScrollHeight(coveredScrollHeight) {
         this._contextState.coveredScrollHeight = coveredScrollHeight;
     }
     /**
      * Resolve id into a context-node.
      */
-    function _contextGet(contextNodeOrId) {
+    _contextGet(contextNodeOrId) {
         if (this._nodesById && ( typeof contextNodeOrId === 'string' || typeof contextNodeOrId === 'number')) {
             var renderNode = this._nodesById[contextNodeOrId];
             if (!renderNode) {
@@ -674,8 +673,8 @@ define(function(require, exports, module) {
     /**
      * Set the node content
      */
-    function _contextSet(contextNodeOrId, set) {
-        var contextNode = this._nodesById ? _contextGet.call(this, contextNodeOrId) : contextNodeOrId;
+    _contextSet(contextNodeOrId, set) {
+        var contextNode = this._nodesById ? this._contextGet(contextNodeOrId) : contextNodeOrId;
         if (contextNode !== undefined) {
             /* Keeps track of which nodes that have been set */
             this._nodeIdInCurrentBuild.set(contextNode.renderNode, true);
@@ -693,7 +692,7 @@ define(function(require, exports, module) {
                      }
                      this._contextState.prevSetIndex = contextNode.index;
                 }
-                node = _contextGetCreateAndOrderNodes.call(this, contextNode.renderNode, contextNode.prev);
+                node = this._contextGetCreateAndOrderNodes(contextNode.renderNode, contextNode.prev);
                 node._viewSequence = contextNode.viewSequence;
                 node._layoutCount++;
                 if (node._layoutCount === 1) {
@@ -760,7 +759,7 @@ define(function(require, exports, module) {
      * Resolve the size of the layout-node from the renderable itsself.
      */
     function _contextResolveSize(contextNodeOrId, parentSize) {
-        var contextNode = this._nodesById ? _contextGet.call(this, contextNodeOrId) : contextNodeOrId;
+        var contextNode = this._nodesById ? this._contextGet(contextNodeOrId) : contextNodeOrId;
         var resolveSize = this._pool.resolveSize;
         if (!contextNode) {
             resolveSize[0] = 0;
@@ -855,6 +854,4 @@ define(function(require, exports, module) {
         }
         return size;
     }
-
-    module.exports = LayoutNodeManager;
-});
+}

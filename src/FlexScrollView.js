@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -25,23 +24,24 @@
  * Inherited from: [ScrollController](./ScrollController.md)
  * @module
  */
-define(function(require, exports, module) {
 
-    // import dependencies
-    var LayoutUtility = require('./LayoutUtility');
-    var ScrollController = require('./ScrollController');
-    var ListLayout = require('./layouts/ListLayout');
 
+import LayoutUtility from './LayoutUtility.js';
+import ScrollController from './ScrollController.js';
+import ListLayout from './ListLayout.js';
+
+
+export default class FlexScrollView extends ScrollController {
     //
     // Pull to refresh states
     //
-    var PullToRefreshState = {
+    static PullToRefreshState = {
         HIDDEN: 0,
         PULLING: 1,
         ACTIVE: 2,
         COMPLETED: 3,
         HIDDING: 4
-    };
+    }
 
     /**
      * @class
@@ -53,19 +53,18 @@ define(function(require, exports, module) {
      * @param {FlexScrollView} [options.trailingScrollView] Trailing scrollview into which input events are piped (see Tutorial)
      * @alias module:FlexScrollView
      */
-    function FlexScrollView(options) {
-        ScrollController.call(this, LayoutUtility.combineOptions(FlexScrollView.DEFAULT_OPTIONS, options));
-        this._thisScrollViewDelta = 0;
-        this._leadingScrollViewDelta = 0;
-        this._trailingScrollViewDelta = 0;
+    constructor(options) {
+      super(...arguments);
+      ScrollController.call(this, LayoutUtility.combineOptions(FlexScrollView.DEFAULT_OPTIONS, options));
+      this._thisScrollViewDelta = 0;
+      this._leadingScrollViewDelta = 0;
+      this._trailingScrollViewDelta = 0;
     }
-    FlexScrollView.prototype = Object.create(ScrollController.prototype);
-    FlexScrollView.prototype.constructor = FlexScrollView;
-    FlexScrollView.PullToRefreshState = PullToRefreshState;
-    FlexScrollView.Bounds = ScrollController.Bounds;
-    FlexScrollView.PaginationMode = ScrollController.PaginationMode;
 
-    FlexScrollView.DEFAULT_OPTIONS = {
+    static Bounds = ScrollController.Bounds;
+    static PaginationMode = ScrollController.PaginationMode;
+
+    static DEFAULT_OPTIONS = {
         layout: ListLayout,         // sequential layout, uses width/height from renderable
         direction: undefined,       // 0 = X, 1 = Y, undefined = use default from layout
         paginated: false,           // pagination on/off
@@ -79,7 +78,7 @@ define(function(require, exports, module) {
         leadingScrollView: undefined,
         trailingScrollView: undefined
         // see ScrollController for all other options
-    };
+    }
 
     /**
      * Patches the FlexScrollView instance's options with the passed-in ones.
@@ -91,45 +90,45 @@ define(function(require, exports, module) {
      * @param {FlexScrollView} [options.trailingScrollView] Trailing scrollview into which input events are piped (see Tutorial).
      * @return {FlexScrollView} this
      */
-    FlexScrollView.prototype.setOptions = function(options) {
-        ScrollController.prototype.setOptions.call(this, options);
+    setOptions(options) {
+      super.setOptions(...arguments);
 
-        // Update pull to refresh renderables
-        if (options.pullToRefreshHeader || options.pullToRefreshFooter || this._pullToRefresh) {
-            if (options.pullToRefreshHeader) {
-                this._pullToRefresh = this._pullToRefresh || [undefined, undefined];
-                if (!this._pullToRefresh[0]) {
-                    this._pullToRefresh[0] = {
-                        state: PullToRefreshState.HIDDEN,
-                        prevState: PullToRefreshState.HIDDEN,
-                        footer: false
-                    };
-                }
-                this._pullToRefresh[0].node = options.pullToRefreshHeader;
-            }
-            else if (!this.options.pullToRefreshHeader && this._pullToRefresh) {
-                this._pullToRefresh[0] = undefined;
-            }
-            if (options.pullToRefreshFooter) {
-                this._pullToRefresh = this._pullToRefresh || [undefined, undefined];
-                if (!this._pullToRefresh[1]) {
-                    this._pullToRefresh[1] = {
-                        state: PullToRefreshState.HIDDEN,
-                        prevState: PullToRefreshState.HIDDEN,
-                        footer: true
-                    };
-                }
-                this._pullToRefresh[1].node = options.pullToRefreshFooter;
-            }
-            else if (!this.options.pullToRefreshFooter && this._pullToRefresh) {
-                this._pullToRefresh[1] = undefined;
-            }
-            if (this._pullToRefresh && !this._pullToRefresh[0] && !this._pullToRefresh[1]) {
-                this._pullToRefresh = undefined;
-            }
-        }
-        return this;
-    };
+      // Update pull to refresh renderables
+      if (options.pullToRefreshHeader || options.pullToRefreshFooter || this._pullToRefresh) {
+          if (options.pullToRefreshHeader) {
+              this._pullToRefresh = this._pullToRefresh || [undefined, undefined];
+              if (!this._pullToRefresh[0]) {
+                  this._pullToRefresh[0] = {
+                      state: PullToRefreshState.HIDDEN,
+                      prevState: PullToRefreshState.HIDDEN,
+                      footer: false
+                  };
+              }
+              this._pullToRefresh[0].node = options.pullToRefreshHeader;
+          }
+          else if (!this.options.pullToRefreshHeader && this._pullToRefresh) {
+              this._pullToRefresh[0] = undefined;
+          }
+          if (options.pullToRefreshFooter) {
+              this._pullToRefresh = this._pullToRefresh || [undefined, undefined];
+              if (!this._pullToRefresh[1]) {
+                  this._pullToRefresh[1] = {
+                      state: PullToRefreshState.HIDDEN,
+                      prevState: PullToRefreshState.HIDDEN,
+                      footer: true
+                  };
+              }
+              this._pullToRefresh[1].node = options.pullToRefreshFooter;
+          }
+          else if (!this.options.pullToRefreshFooter && this._pullToRefresh) {
+              this._pullToRefresh[1] = undefined;
+          }
+          if (this._pullToRefresh && !this._pullToRefresh[0] && !this._pullToRefresh[1]) {
+              this._pullToRefresh = undefined;
+          }
+      }
+      return this;
+    }
 
     /**
      * Sets the data-source (alias for setDataSource).
@@ -139,9 +138,9 @@ define(function(require, exports, module) {
      * @param {Array|LinkedListViewSequence} node Either an array of renderables or a viewSequence.
      * @return {FlexScrollView} this
      */
-    FlexScrollView.prototype.sequenceFrom = function(node) {
+    sequenceFrom(node) {
         return this.setDataSource(node);
-    };
+    }
 
     /**
      * Returns the index of the first visible renderable.
@@ -150,10 +149,10 @@ define(function(require, exports, module) {
      *
      * @return {Number} Index of the first visible renderable.
      */
-    FlexScrollView.prototype.getCurrentIndex = function() {
+    getCurrentIndex() {
         var item = this.getFirstVisibleItem();
         return item ? item.viewSequence.getIndex() : -1;
-    };
+    }
 
     /**
      * Paginates the Scrollview to an absolute page index. This function is a shim provided
@@ -163,7 +162,7 @@ define(function(require, exports, module) {
      * @param {Bool} [noAnimation] When set to true, immediately shows the node without scrolling animation.
      * @return {FlexScrollView} this
      */
-    FlexScrollView.prototype.goToPage = function(index, noAnimation) {
+    goToPage(index, noAnimation) {
         var viewSequence = this._viewSequence;
         if (!viewSequence) {
             return this;
@@ -182,7 +181,7 @@ define(function(require, exports, module) {
         }
         this.goToRenderNode(viewSequence.get(), noAnimation);
         return this;
-    };
+    }
 
     /**
      * Returns the offset associated with the Scrollview instance's current node
@@ -193,9 +192,9 @@ define(function(require, exports, module) {
      * @return {number} The position of either the specified node, or the Scrollview's current Node,
      * in pixels translated.
      */
-    FlexScrollView.prototype.getOffset = function() {
+    getOffset() {
         return this._scrollOffsetCache;
-    };
+    }
 
     /**
      * Returns the position associated with the Scrollview instance's current node
@@ -209,7 +208,9 @@ define(function(require, exports, module) {
      * @return {number} The position of either the specified node, or the Scrollview's current Node,
      * in pixels translated.
      */
-    FlexScrollView.prototype.getPosition = FlexScrollView.prototype.getOffset;
+    getPosition() {
+      return this._scrollOffsetCache;
+    }
 
     /**
      * Returns the absolute position associated with the Scrollview instance.
@@ -218,14 +219,14 @@ define(function(require, exports, module) {
      *
      * @return {number} The position of the Scrollview's current Node, in pixels translated.
      */
-    FlexScrollView.prototype.getAbsolutePosition = function() {
+    getAbsolutePosition() {
         return -(this._scrollOffsetCache + this._scroll.groupStart);
-    };
+    }
 
     /**
      * Helper function for setting the pull-to-refresh status.
      */
-    function _setPullToRefreshState(pullToRefresh, state) {
+    static _setPullToRefreshState(pullToRefresh, state) {
         if (pullToRefresh.state !== state) {
             pullToRefresh.state = state;
             if (pullToRefresh.node && pullToRefresh.node.setPullToRefreshStatus) {
@@ -237,7 +238,7 @@ define(function(require, exports, module) {
     /**
      * Helper function for getting the pull-to-refresh data.
      */
-    function _getPullToRefresh(footer) {
+    _getPullToRefresh(footer) {
         return this._pullToRefresh ? this._pullToRefresh[footer ? 1 : 0] : undefined;
     }
 
@@ -245,7 +246,7 @@ define(function(require, exports, module) {
      * Post-layout function that adds the pull-to-refresh renderables.
      * @private
      */
-    FlexScrollView.prototype._postLayout = function(size, scrollOffset) {
+    _postLayout(size, scrollOffset) {
 
         // Exit immediately when pull to refresh is not configured
         if (!this._pullToRefresh) {
@@ -368,7 +369,7 @@ define(function(require, exports, module) {
                 }
             }
         }
-    };
+    }
 
     /**
      * Shows the pulls-to-refresh renderable indicating that a refresh is in progress.
@@ -376,13 +377,13 @@ define(function(require, exports, module) {
      * @param {Bool} [footer] set to true to show pull-to-refresh at the footer (default: false).
      * @return {FlexScrollView} this
      */
-    FlexScrollView.prototype.showPullToRefresh = function(footer) {
-        var pullToRefresh = _getPullToRefresh.call(this, footer);
+    showPullToRefresh(footer) {
+        var pullToRefresh = this._getPullToRefresh(footer);
         if (pullToRefresh) {
             _setPullToRefreshState(pullToRefresh, PullToRefreshState.ACTIVE);
             this._scroll.scrollDirty = true;
         }
-    };
+    }
 
     /**
      * Hides the pull-to-refresh renderable in case it was visible.
@@ -390,34 +391,34 @@ define(function(require, exports, module) {
      * @param {Bool} [footer] set to true to hide the pull-to-refresh at the footer (default: false).
      * @return {FlexScrollView} this
      */
-    FlexScrollView.prototype.hidePullToRefresh = function(footer) {
-        var pullToRefresh = _getPullToRefresh.call(this, footer);
+    hidePullToRefresh(footer) {
+        var pullToRefresh = this._getPullToRefresh(footer);
         if (pullToRefresh && (pullToRefresh.state === PullToRefreshState.ACTIVE)) {
             _setPullToRefreshState(pullToRefresh, PullToRefreshState.COMPLETED);
             this._scroll.scrollDirty = true;
         }
         return this;
-    };
+    }
 
     /**
      * Get the visible state of the pull-to-refresh renderable.
      *
      * @param {Bool} [footer] set to true to get the state of the pull-to-refresh footer (default: false).
      */
-    FlexScrollView.prototype.isPullToRefreshVisible = function(footer) {
-        var pullToRefresh = _getPullToRefresh.call(this, footer);
+    isPullToRefreshVisible(footer) {
+        var pullToRefresh = this._getPullToRefresh(footer);
         return pullToRefresh ? (pullToRefresh.state === PullToRefreshState.ACTIVE) : false;
-    };
+    }
 
     /**
      * Delegates any scroll force to leading/trailing scrollviews.
      * @private
      */
-    FlexScrollView.prototype.applyScrollForce = function(delta) {
+    applyScrollForce(delta) {
         var leadingScrollView = this.options.leadingScrollView;
         var trailingScrollView = this.options.trailingScrollView;
         if (!leadingScrollView && !trailingScrollView) {
-            return ScrollController.prototype.applyScrollForce.call(this, delta);
+            return super.applyScrollForce(delta);
         }
         var partialDelta;
         if (delta < 0) {
@@ -429,14 +430,14 @@ define(function(require, exports, module) {
             }
             if (trailingScrollView) {
                 partialDelta = this.canScroll(delta);
-                ScrollController.prototype.applyScrollForce.call(this, partialDelta);
+                super.applyScrollForce(partialDelta);
                 this._thisScrollViewDelta += partialDelta;
                 delta -= partialDelta;
                 trailingScrollView.applyScrollForce(delta);
                 this._trailingScrollViewDelta += delta;
             }
             else {
-                ScrollController.prototype.applyScrollForce.call(this, delta);
+                super.applyScrollForce(delta);
                 this._thisScrollViewDelta += delta;
             }
         }
@@ -449,29 +450,29 @@ define(function(require, exports, module) {
             }
             if (leadingScrollView) {
                 partialDelta = this.canScroll(delta);
-                ScrollController.prototype.applyScrollForce.call(this, partialDelta);
+                super.applyScrollForce(partialDelta);
                 this._thisScrollViewDelta += partialDelta;
                 delta -= partialDelta;
                 leadingScrollView.applyScrollForce(delta);
                 this._leadingScrollViewDelta += delta;
             }
             else {
-                ScrollController.prototype.applyScrollForce.call(this, delta);
+                super.applyScrollForce(delta);
                 this._thisScrollViewDelta += delta;
             }
         }
         return this;
-    };
+    }
 
     /**
      * Delegates any scroll force to leading/trailing scrollviews.
      * @private
      */
-    FlexScrollView.prototype.updateScrollForce = function(prevDelta, newDelta) {
+    updateScrollForce(prevDelta, newDelta) {
         var leadingScrollView = this.options.leadingScrollView;
         var trailingScrollView = this.options.trailingScrollView;
         if (!leadingScrollView && !trailingScrollView) {
-            return ScrollController.prototype.updateScrollForce.call(this, prevDelta, newDelta);
+            return super.updateScrollForce(prevDelta, newDelta);
         }
         var partialDelta;
         var delta = newDelta - prevDelta;
@@ -484,14 +485,14 @@ define(function(require, exports, module) {
             }
             if (trailingScrollView && delta) {
                 partialDelta = this.canScroll(delta);
-                ScrollController.prototype.updateScrollForce.call(this, this._thisScrollViewDelta, this._thisScrollViewDelta + partialDelta);
+                super.updateScrollForce(this._thisScrollViewDelta, this._thisScrollViewDelta + partialDelta);
                 this._thisScrollViewDelta += partialDelta;
                 delta -= partialDelta;
                 this._trailingScrollViewDelta += delta;
                 trailingScrollView.updateScrollForce(this._trailingScrollViewDelta, this._trailingScrollViewDelta + delta);
             }
             else if (delta) {
-                ScrollController.prototype.updateScrollForce.call(this, this._thisScrollViewDelta, this._thisScrollViewDelta + delta);
+                super.updateScrollForce(this._thisScrollViewDelta, this._thisScrollViewDelta + delta);
                 this._thisScrollViewDelta += delta;
             }
         }
@@ -504,29 +505,29 @@ define(function(require, exports, module) {
             }
             if (leadingScrollView) {
                 partialDelta = this.canScroll(delta);
-                ScrollController.prototype.updateScrollForce.call(this, this._thisScrollViewDelta, this._thisScrollViewDelta + partialDelta);
+                super.updateScrollForce(this._thisScrollViewDelta, this._thisScrollViewDelta + partialDelta);
                 this._thisScrollViewDelta += partialDelta;
                 delta -= partialDelta;
                 leadingScrollView.updateScrollForce(this._leadingScrollViewDelta, this._leadingScrollViewDelta + delta);
                 this._leadingScrollViewDelta += delta;
             }
             else {
-                ScrollController.prototype.updateScrollForce.call(this, this._thisScrollViewDelta, this._thisScrollViewDelta + delta);
+                super.updateScrollForce(this._thisScrollViewDelta, this._thisScrollViewDelta + delta);
                 this._thisScrollViewDelta += delta;
             }
         }
         return this;
-    };
+    }
 
     /**
      * Delegates any scroll force to leading/trailing scrollviews.
      * @private
      */
-    FlexScrollView.prototype.releaseScrollForce = function(delta, velocity, detectSwipes) {
+    releaseScrollForce(delta, velocity, detectSwipes) {
         var leadingScrollView = this.options.leadingScrollView;
         var trailingScrollView = this.options.trailingScrollView;
         if (!leadingScrollView && !trailingScrollView) {
-            return ScrollController.prototype.releaseScrollForce.call(this, delta, velocity, detectSwipes);
+            return super.releaseScrollForce(delta, velocity, detectSwipes);
         }
         var partialDelta;
         if (delta < 0) {
@@ -540,13 +541,13 @@ define(function(require, exports, module) {
                 partialDelta = Math.max(this._thisScrollViewDelta, delta);
                 this._thisScrollViewDelta -= partialDelta;
                 delta -= partialDelta;
-                ScrollController.prototype.releaseScrollForce.call(this, this._thisScrollViewDelta, delta ? 0 : velocity, detectSwipes);
+                super.releaseScrollForce(this._thisScrollViewDelta, delta ? 0 : velocity, detectSwipes);
                 this._trailingScrollViewDelta -= delta;
                 trailingScrollView.releaseScrollForce(this._trailingScrollViewDelta, delta ? velocity : 0, detectSwipes);
             }
             else {
                 this._thisScrollViewDelta -= delta;
-                ScrollController.prototype.releaseScrollForce.call(this, this._thisScrollViewDelta, delta ? velocity : 0, detectSwipes);
+                super.releaseScrollForce(this._thisScrollViewDelta, delta ? velocity : 0, detectSwipes);
             }
         }
         else {
@@ -560,27 +561,27 @@ define(function(require, exports, module) {
                 partialDelta = Math.min(this._thisScrollViewDelta, delta);
                 this._thisScrollViewDelta -= partialDelta;
                 delta -= partialDelta;
-                ScrollController.prototype.releaseScrollForce.call(this, this._thisScrollViewDelta, delta ? 0 : velocity, detectSwipes);
+                super.releaseScrollForce(this._thisScrollViewDelta, delta ? 0 : velocity, detectSwipes);
                 this._leadingScrollViewDelta -= delta;
                 leadingScrollView.releaseScrollForce(this._leadingScrollViewDelta, delta ? velocity : 0, detectSwipes);
             }
             else {
                 this._thisScrollViewDelta -= delta;
-                ScrollController.prototype.updateScrollForce.call(this, this._thisScrollViewDelta, delta ? velocity : 0, detectSwipes);
+                super.updateScrollForce(this._thisScrollViewDelta, delta ? velocity : 0, detectSwipes);
             }
         }
         return this;
-    };
+    }
 
     /**
      * Overriden commit, in order to emit pull-to-refresh event after
      * all the rendering has been done.
      * @private
      */
-    FlexScrollView.prototype.commit = function(context) {
+    commit(context) {
 
         // Call base class
-        var result = ScrollController.prototype.commit.call(this, context);
+        var result = super.commit(context);
 
         // Emit pull to refresh events after the whole commit call has been executed
         // so that when the refresh event is received, the FlexScrollView is in a valid state
@@ -601,7 +602,5 @@ define(function(require, exports, module) {
             }
         }
         return result;
-    };
-
-    module.exports = FlexScrollView;
-});
+    }
+}

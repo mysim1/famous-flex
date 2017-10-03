@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014 - 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -13,19 +12,21 @@
  *
  * @module
  */
-define(function (require, exports, module) {
 
-    // import dependencies
-    var OptionsManager = require('famous/core/OptionsManager');
-    var Transform = require('famous/core/Transform');
-    var Engine = require('famous/core/Engine');
-    var Vector = require('famous/math/Vector');
-    var Particle = require('famous/physics/bodies/Particle');
-    var Spring = require('famous/physics/forces/Spring');
-    var PhysicsEngine = require('famous/physics/PhysicsEngine');
-    var LayoutNode = require('./LayoutNode');
-    var Transitionable = require('famous/transitions/Transitionable');
-    var Easing = require('famous/transitions/Easing');
+
+import OptionsManager from 'famous/core/OptionsManager.js';
+import Transform from 'famous/core/Transform.js';
+import Engine from 'famous/core/Engine.js';
+import Vector from 'famous/math/Vector.js';
+import Particle from 'famous/physics/bodies/Particle.js';
+import Spring from 'famous/physics/forces/Spring.js';
+import PhysicsEngine from 'famous/physics/PhysicsEngine.js';
+import LayoutNode from './LayoutNode.js';
+import Transitionable from 'famous/transitions/Transitionable.js';
+import Easing from 'famous/transitions/Easing.js';
+
+
+export default class FlowLayoutNode extends LayoutNode {
 
     /**
      * @class
@@ -35,59 +36,55 @@ define(function (require, exports, module) {
      * @param {Object} physicsEngines physics-engines to use
      * @alias module:FlowLayoutNode
      */
-    function FlowLayoutNode(renderNode, spec) {
+    constructor(renderNode, spec) {
+      super(...arguments);
 
-        LayoutNode.apply(this, arguments);
+      /* Recreating the objects because constructor can be called twice */
 
-        /* Recreating the objects because constructor can be called twice */
+      if (!this.options) {
+          this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
+          this._optionsManager = new OptionsManager(this.options);
+      }
 
-        if (!this.options) {
-            this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
-            this._optionsManager = new OptionsManager(this.options);
-        }
+      if (!this._pe) {
+          this._pe = new PhysicsEngine();
+          this._pe.on('end', function () {
+              if (!this._shouldDoSingleTween) {
+                  this._completeFlowCallback({ reason: 'flowEnd' });
+              }
+          }.bind(this));
+          this._pe.sleep();
+      }
 
-        if (!this._pe) {
-            this._pe = new PhysicsEngine();
-            this._pe.on('end', function () {
-                if (!this._shouldDoSingleTween) {
-                    this._completeFlowCallback({ reason: 'flowEnd' });
-                }
-            }.bind(this));
-            this._pe.sleep();
-        }
+      if (!this._properties) {
+          this._properties = {};
+      }
+      else {
+          for (let propName in this._properties) {
+              this._properties[propName].init = false;
+          }
+      }
 
-        if (!this._properties) {
-            this._properties = {};
-        }
-        else {
-            for (var propName in this._properties) {
-                this._properties[propName].init = false;
-            }
-        }
+      if (!this._lockTransitionable) {
+          this._lockTransitionable = new Transitionable(1);
+      }
+      else {
+          this._lockTransitionable.halt();
+          this._lockTransitionable.reset(1);
+      }
+      this._specModified = true;
 
-        if (!this._lockTransitionable) {
-            this._lockTransitionable = new Transitionable(1);
-        }
-        else {
-            this._lockTransitionable.halt();
-            this._lockTransitionable.reset(1);
-        }
-        this._specModified = true;
+      if (spec) {
+          this.setInsertSpec(spec);
+      }
+      this._initial = true;
+      this._spec.endState = {};
 
-        if (spec) {
-            this.setInsertSpec(spec);
-        }
-        this._initial = true;
-        this._spec.endState = {};
-
-        /* Assume non-existance by default */
-        this._exists = false;
+      /* Assume non-existance by default */
+      this._exists = false;
     }
 
-    FlowLayoutNode.prototype = Object.create(LayoutNode.prototype);
-    FlowLayoutNode.prototype.constructor = FlowLayoutNode;
-
-    FlowLayoutNode.DEFAULT_OPTIONS = {
+    static DEFAULT_OPTIONS = {
         spring: {
             dampingRatio: 0.8,
             period: 300
@@ -103,12 +100,12 @@ define(function (require, exports, module) {
             scale: true
         },
         particleRounding: 0.001
-    };
+    }
 
     /**
      * Defaults
      */
-    var DEFAULT = {
+    static DEFAULT = {
         opacity: 1,
         opacity2D: [1, 0],
         size: [0, 0],
@@ -118,15 +115,15 @@ define(function (require, exports, module) {
         translate: [0, 0, 0],
         rotate: [0, 0, 0],
         skew: [0, 0, 0]
-    };
+    }
     /**
      * Sets the configuration options
      */
-    FlowLayoutNode.prototype.setOptions = function (options) {
+    setOptions(options) {
         this._optionsManager.setOptions(options);
-        var wasSleeping = this._pe.isSleeping();
-        for (var propName in this._properties) {
-            var prop = this._properties[propName];
+        let wasSleeping = this._pe.isSleeping();
+        for (let propName in this._properties) {
+            let prop = this._properties[propName];
             if (options.spring && prop.force) {
                 prop.force.setOptions(this.options.spring);
             }
@@ -147,41 +144,41 @@ define(function (require, exports, module) {
             this._pe.sleep();
         }
         return this;
-    };
+    }
 
     /**
      * Set the properties from a spec.
      */
-    FlowLayoutNode.prototype.setInsertSpec = function (spec) {
+    setInsertSpec(spec) {
         this._latentInsertSpec = spec;
-    };
+    }
 
     /**
      * Set the properties from a spec.
      */
-    FlowLayoutNode.prototype.executeInsertSpec = function () {
+    executeInsertSpec() {
         this._insertSpec = this._latentInsertSpec;
-    };
+    }
 
     /**
      * Reset the end-state. This function is called on all layout-nodes prior to
      * calling the layout-function. So that the layout-function starts with a clean slate.
      */
-    FlowLayoutNode.prototype.reset = function () {
+    reset() {
         if (this._invalidated) {
-            for (var propName in this._properties) {
+            for (let propName in this._properties) {
                 this._properties[propName].invalidated = false;
             }
             this._invalidated = false;
         }
         this.trueSizeRequested = false;
         this.usesTrueSize = false;
-    };
+    }
 
     /**
      * Markes the node for removal.
      */
-    FlowLayoutNode.prototype.remove = function (removeSpec) {
+    remove(removeSpec) {
 
         // Transition to the remove-spec state
         this._removing = true;
@@ -195,14 +192,14 @@ define(function (require, exports, module) {
 
         // Mark for removal
         this._invalidated = false;
-    };
+    }
 
     /**
      * Temporarily releases the flowing-lock that is applied to the node.
      * E.g., when changing position, resizing, the lock should be released so that
      * the renderables can smoothly transition to their new positions.
      */
-    FlowLayoutNode.prototype.releaseLock = function (enable, options, callback) {
+    releaseLock(enable, options, callback) {
         if (!this._singleTween) {
             if (!options) {
                 options = {
@@ -211,13 +208,12 @@ define(function (require, exports, module) {
             }
             this._releaseLock = { enable: enable, options: options, callback: callback };
         }
-
-    };
+    }
 
     /**
      * Helper function for getting the property value.
      */
-    function _getRoundedValue3D(prop, def, precision, lockValue) {
+    _getRoundedValue3D(prop, def, precision, lockValue) {
         if (!prop || !prop.init) {
             return def;
         }
@@ -228,20 +224,20 @@ define(function (require, exports, module) {
         ];
     }
 
-    FlowLayoutNode.prototype.getTranslate = function () {
-        var translate =this._properties.translate.endState;
+    getTranslate() {
+        let translate =this._properties.translate.endState;
         return [translate.x, translate.y, translate.z];
-    };
+    }
 
     /**
      * Creates the render-spec
      */
-    FlowLayoutNode.prototype.getSpec = function () {
+    getSpec() {
 
         if (this._releaseLock) {
-            var enable = this._releaseLock.enable;
-            var options = this._releaseLock.options;
-            var callback = this._releaseLock.callback;
+            let enable = this._releaseLock.enable;
+            let options = this._releaseLock.options;
+            let callback = this._releaseLock.callback;
             this._lockTransitionable.halt();
             this._lockTransitionable.reset(0);
             if (enable) {
@@ -253,11 +249,11 @@ define(function (require, exports, module) {
 
 
         if (this._insertSpec) {
-            var insertSpec = this._insertSpec;
+            let insertSpec = this._insertSpec;
             this._insertSpec = undefined;
-            var oldExists = this._exists;
-            var oldRemoving = this._removing;
-            var oldInvalidated = this._invalidated;
+            let oldExists = this._exists;
+            let oldRemoving = this._removing;
+            let oldInvalidated = this._invalidated;
             this.set(insertSpec);
             this._exists = oldExists;
             this._removing = oldRemoving;
@@ -270,12 +266,12 @@ define(function (require, exports, module) {
         }
 
         // When the end state was reached, return the previous spec
-        var endStateReached = this._pe.isSleeping() && !this._singleTween;
+        let endStateReached = this._pe.isSleeping() && !this._singleTween;
         if (!this._specModified && endStateReached) {
             this._spec.removed = !this._invalidated;
             return this._spec;
         }
-        var lockValue = this._lockTransitionable.get();
+        let lockValue = this._lockTransitionable.get();
         this._lastObservedLockValue = lockValue;
         this._initial = false;
         this._specModified = !endStateReached || this._lockTransitionable.isActive();
@@ -287,12 +283,12 @@ define(function (require, exports, module) {
         }
 
         // Build fresh spec
-        var spec = this._spec;
-        var precision = this.options.particleRounding;
+        let spec = this._spec;
+        let precision = this.options.particleRounding;
 
 
         // opacity
-        var prop = this._properties.opacity;
+        let prop = this._properties.opacity;
         if (prop && prop.init) {
             if (!Engine.shouldPropertyAnimate('opacity')) {
                 prop.noAnimation = true;
@@ -370,10 +366,10 @@ define(function (require, exports, module) {
         }
 
         // translate
-        var translate = this._properties.translate;
-        var translateX;
-        var translateY;
-        var translateZ;
+        let translate = this._properties.translate;
+        let translateX;
+        let translateY;
+        let translateZ;
         if (translate && translate.init) {
             translateX = translate.enabled[0] ? (Math.round((translate.curState.x + ((translate.endState.x - translate.curState.x) * lockValue)) / precision) * precision) : translate.endState.x;
             translateY = translate.enabled[1] ? (Math.round((translate.curState.y + ((translate.endState.y - translate.curState.y) * lockValue)) / precision) * precision) : translate.endState.y;
@@ -386,15 +382,15 @@ define(function (require, exports, module) {
         }
 
         // scale, skew, scale
-        var scale = this._properties.scale;
-        var skew = this._properties.skew;
-        var rotate = this._properties.rotate;
+        let scale = this._properties.scale;
+        let skew = this._properties.skew;
+        let rotate = this._properties.rotate;
         if (scale || skew || rotate) {
             spec.transform = Transform.build({
                 translate: [translateX, translateY, translateZ],
-                skew: _getRoundedValue3D.call(this, skew, DEFAULT.skew, this.options.particleRounding, lockValue),
-                scale: _getRoundedValue3D.call(this, scale, DEFAULT.scale, this.options.particleRounding, lockValue),
-                rotate: _getRoundedValue3D.call(this, rotate, DEFAULT.rotate, this.options.particleRounding, lockValue)
+                skew: this._getRoundedValue3D(skew, DEFAULT.skew, this.options.particleRounding, lockValue),
+                scale: this._getRoundedValue3D(scale, DEFAULT.scale, this.options.particleRounding, lockValue),
+                rotate: this._getRoundedValue3D(rotate, DEFAULT.rotate, this.options.particleRounding, lockValue)
             });
             spec.endState.transform = Transform.build({
                 translate: translate ? [translate.endState.x, translate.endState.y, translate.endState.z] : DEFAULT.translate,
@@ -426,25 +422,25 @@ define(function (require, exports, module) {
             spec.endState.transform = undefined;
         }
         return this._spec;
-    };
+    }
 
-    FlowLayoutNode.prototype.stoppedFlowing = function() {
+    stoppedFlowing() {
         return this._lockTransitionable.get() === 1 && !this._singleTween && this._pe.isSleeping() && !this._insertSpec;
     }
 
     /**
      * Helper function to set the property of a node (e.g. opacity, translate, etc..)
      */
-    function _setPropertyValue(prop, propName, endState, defaultValue, transition) {
+    _setPropertyValue(prop, propName, endState, defaultValue, transition) {
         //TODO: See if we can remove this
-        var immediate = false;
+        let immediate = false;
         // Get property
         prop = prop || this._properties[propName];
 
         // Update the property
         if (prop && prop.init) {
             prop.invalidated = true;
-            var value = defaultValue;
+            let value = defaultValue;
             if (endState !== undefined) {
                 value = endState;
             }
@@ -452,7 +448,7 @@ define(function (require, exports, module) {
                 value = prop.particle.getPosition();
             }
             // set new end state (the quick way)
-            var newPropsAreDifferent = !_approxEqual3d(value, prop.endState);
+            let newPropsAreDifferent = !_approxEqual3d(value, prop.endState);
 
             // If we reached an end state and we shouldn't go to another state
             if (this._pe.isSleeping() && !this._singleTween && newPropsAreDifferent && !this._disableSingleTween && transition) {
@@ -489,7 +485,7 @@ define(function (require, exports, module) {
             /* Only do single tween if there's a transition specified */
             this._shouldDoSingleTween = !!transition;
             // Create property if neccesary
-            var wasSleeping = this._pe.isSleeping();
+            let wasSleeping = this._pe.isSleeping();
             if (!prop) {
                 prop = {
                     particle: new Particle({
@@ -545,21 +541,21 @@ define(function (require, exports, module) {
     /**
      * Get value if not equals.
      */
-    function _getIfNE2D(a1, a2) {
+    static _getIfNE2D(a1, a2) {
         return ((a1[0] === a2[0]) && (a1[1] === a2[1])) ? undefined : a1;
     }
 
-    function _getIfNE3D(a1, a2) {
+    static _getIfNE3D(a1, a2) {
         return ((a1[0] === a2[0]) && (a1[1] === a2[1]) && (a1[2] === a2[2])) ? undefined : a1;
     }
 
-    function _approxEqual3d(array, vector) {
+    static _approxEqual3d(array, vector) {
         return ['x', 'y', 'z'].every(function (dimension, index) {
             return (array.length <= index || array[index] === true || Math.abs(array[index] - vector[dimension]) < 0.01);
         });
     }
 
-    function _assignVectorFromArray(vector, array) {
+    static _assignVectorFromArray(vector, array) {
         vector.x = array[0] === true ? vector.x : array[0];
         vector.y = (array.length > 1) ? array[1] === true ? vector.y : array[1] : 0;
         vector.z = (array.length > 2) ? array[2] : 0;
@@ -569,7 +565,7 @@ define(function (require, exports, module) {
     /**
      * context.set(..)
      */
-    FlowLayoutNode.prototype.set = function (set, defaultSize) {
+    set(set, defaultSize) {
         /* If an insert spec is specified, we assume removed (non-existing) by default */
         this._exists = true;
 
@@ -583,49 +579,49 @@ define(function (require, exports, module) {
         this._spec.hide = set.hide;
 
         // opacity
-        var prop = this._properties.opacity;
-        var value = set.opacity !== undefined ? set.opacity : 1;
+        let prop = this._properties.opacity;
+        let value = set.opacity !== undefined ? set.opacity : 1;
         if (this._insertSpec && this._insertSpec.opacity !== undefined) {
-            _setPropertyValue.call(this, prop, 'opacity', [this._insertSpec.opacity * value, 0], DEFAULT.opacity2D, set.transition);
+            this._setPropertyValue(prop, 'opacity', [this._insertSpec.opacity * value, 0], DEFAULT.opacity2D, set.transition);
         }
-        var prop = this._properties.opacity;
-        _setPropertyValue.call(this, prop, 'opacity', [value, 0], DEFAULT.opacity2D, set.transition);
+        let prop = this._properties.opacity;
+        this._setPropertyValue(prop, 'opacity', [value, 0], DEFAULT.opacity2D, set.transition);
 
 
         // set align
         prop = this._properties.align;
         value = set.align ? _getIfNE2D(set.align, DEFAULT.align) : undefined;
         if (this._insertSpec && this._insertSpec.align) {
-            var initial = this._insertSpec.align;
-            _setPropertyValue.call(this, prop, 'align', initial, DEFAULT.align, set.transition);
+            let initial = this._insertSpec.align;
+            this._setPropertyValue(prop, 'align', initial, DEFAULT.align, set.transition);
         }
         prop = this._properties.align;
         if (value || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'align', value, DEFAULT.align, set.transition);
+            this._setPropertyValue(prop, 'align', value, DEFAULT.align, set.transition);
         }
 
         // set orgin
         prop = this._properties.origin;
         value = set.origin ? _getIfNE2D(set.origin, DEFAULT.origin) : undefined;
         if (this._insertSpec && this._insertSpec.origin) {
-            var initial = this._insertSpec.origin;
-            _setPropertyValue.call(this, prop, 'origin', initial, DEFAULT.origin, set.transition);
+            let initial = this._insertSpec.origin;
+            this._setPropertyValue(prop, 'origin', initial, DEFAULT.origin, set.transition);
         }
         prop = this._properties.origin;
         if (value || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'origin', value, DEFAULT.origin, set.transition);
+            this._setPropertyValue(prop, 'origin', value, DEFAULT.origin, set.transition);
         }
 
         // set size
         prop = this._properties.size;
         if (this._insertSpec && this._insertSpec.size) {
-            var initial = this._insertSpec.size;
-            _setPropertyValue.call(this, prop, 'size', initial, defaultSize, set.transition);
+            let initial = this._insertSpec.size;
+            this._setPropertyValue(prop, 'size', initial, defaultSize, set.transition);
         }
         prop = this._properties.size;
         value = set.size || defaultSize;
         if (value || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'size', value, defaultSize, set.transition);
+            this._setPropertyValue(prop, 'size', value, defaultSize, set.transition);
         }
 
         // set translate
@@ -633,24 +629,24 @@ define(function (require, exports, module) {
         value = set.translate;
         if (value || (prop && prop.init)) {
             if (this._insertSpec && this._insertSpec.translate) {
-                var initial = this._insertSpec.translate;
-                _setPropertyValue.call(this, prop, 'translate', [0, 1, 2].map(function (index) {
+                let initial = this._insertSpec.translate;
+                this._setPropertyValue(prop, 'translate', [0, 1, 2].map(function (index) {
                     return initial[index] + value[index]
                 }), DEFAULT.translate, undefined, true);
             }
-            _setPropertyValue.call(this, prop, 'translate', value, DEFAULT.translate, set.transition);
+            this._setPropertyValue(prop, 'translate', value, DEFAULT.translate, set.transition);
         }
 
         // set scale
         prop = this._properties.scale;
         value = set.scale ? _getIfNE3D(set.scale, DEFAULT.scale) : undefined;
         if (this._insertSpec && this._insertSpec.scale) {
-            var initial = this._insertSpec.scale;
-            _setPropertyValue.call(this, prop, 'scale', initial, DEFAULT.scale, set.transition);
+            let initial = this._insertSpec.scale;
+            this._setPropertyValue(prop, 'scale', initial, DEFAULT.scale, set.transition);
         }
         prop = this._properties.scale; //TODO check if this line is necessary
         if (value !== undefined || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'scale', value, DEFAULT.scale, set.transition);
+            this._setPropertyValue(prop, 'scale', value, DEFAULT.scale, set.transition);
         }
 
 
@@ -658,12 +654,12 @@ define(function (require, exports, module) {
         prop = this._properties.rotate;
         value = set.rotate ? _getIfNE3D(set.rotate, DEFAULT.rotate) : undefined;
         if (this._insertSpec && this._insertSpec.rotate) {
-            var initial = this._insertSpec.rotate;
-            _setPropertyValue.call(this, prop, 'rotate', initial, DEFAULT.rotate, set.transition);
+            let initial = this._insertSpec.rotate;
+            this._setPropertyValue(prop, 'rotate', initial, DEFAULT.rotate, set.transition);
         }
         prop = this._properties.rotate; //TODO check if this line is necessary
         if(value !== undefined || (prop && prop.init)){
-            _setPropertyValue.call(this, prop, 'rotate', value, DEFAULT.rotate, set.transition);
+            this._setPropertyValue(prop, 'rotate', value, DEFAULT.rotate, set.transition);
         }
 
 
@@ -671,11 +667,11 @@ define(function (require, exports, module) {
         prop = this._properties.skew;
         value = set.skew ? _getIfNE3D(set.skew, DEFAULT.skew) : undefined;
         if (this._insertSpec && this._insertSpec.skew) {
-            var initial = this._insertSpec.skew;
-            _setPropertyValue.call(this, prop, 'skew', initial, DEFAULT.skew, set.transition);
+            let initial = this._insertSpec.skew;
+            this._setPropertyValue(prop, 'skew', initial, DEFAULT.skew, set.transition);
         }
         if (value !== undefined || (prop && prop.init)) {
-            _setPropertyValue.call(this, prop, 'skew', value, DEFAULT.skew, set.transition);
+            this._setPropertyValue(prop, 'skew', value, DEFAULT.skew, set.transition);
         }
 
         if (set.callback) {
@@ -688,8 +684,8 @@ define(function (require, exports, module) {
 
 
         if (this._shouldDoSingleTween) {
-            var givenTransformation = typeof set.transition === 'function' ? set : set.transition;
-            /* Reset variable */
+            let givenTransformation = typeof set.transition === 'function' ? set : set.transition;
+            /* Reset letiable */
             this._shouldDoSingleTween = false;
             this._singleTweenProperties = givenTransformation || {
                     curve: function linear(x) {
@@ -699,8 +695,8 @@ define(function (require, exports, module) {
             this.releaseLock(true, this._singleTweenProperties, function () {
                 if (this._singleTween) {
                     this._singleTween = false;
-                    for (var propName in this._properties) {
-                        var prop = this._properties[propName];
+                    for (let propName in this._properties) {
+                        let prop = this._properties[propName];
                         if (prop && prop.init) {
                             prop.curState.x = prop.endState.x;
                             prop.curState.y = prop.endState.y;
@@ -714,7 +710,7 @@ define(function (require, exports, module) {
         } else if (this._disableSingleTween) {
             /* This will have FlowLayoutNode.set() called again the next render tick, at which point _shouldDoSingleTween will have been set to true again. */
             this._singleTween = false;
-            for (var otherPropName in this._properties) {
+            for (let otherPropName in this._properties) {
                 if (!(otherPropName in this._disableSingleTween)) {
                     this.interruptPropertyTween(otherPropName);
                 }
@@ -729,23 +725,23 @@ define(function (require, exports, module) {
         }
 
         this._insertSpec = undefined;
-    };
+    }
 
 
-    FlowLayoutNode.prototype.interruptPropertyTween = function (propertyName) {
-        var lockVar = this._lockTransitionable.get();
+    interruptPropertyTween(propertyName) {
+        let lockVar = this._lockTransitionable.get();
         //Complex code for calculating the velocity of the current ongoing animation
-        var velocity = this._lockTransitionable.velocity;
-        var curve = this._singleTweenProperties.curve || function linear(x) {
+        let velocity = this._lockTransitionable.velocity;
+        let curve = this._singleTweenProperties.curve || function linear(x) {
                 return x
             };
-        var duration = this._singleTweenProperties.duration;
-        var epsilon = 1e-7;
-        var curveDelta = (curve(lockVar) - curve(lockVar - epsilon)) / epsilon;
-        var adjustedProp = this._properties[propertyName];
+        let duration = this._singleTweenProperties.duration;
+        let epsilon = 1e-7;
+        let curveDelta = (curve(lockVar) - curve(lockVar - epsilon)) / epsilon;
+        let adjustedProp = this._properties[propertyName];
         ['x', 'y', 'z'].forEach(function (dimension) {
-            var distanceToTravel = (adjustedProp.endState[dimension] - adjustedProp.curState[dimension]);
-            var distanceTraveled = distanceToTravel * lockVar;
+            let distanceToTravel = (adjustedProp.endState[dimension] - adjustedProp.curState[dimension]);
+            let distanceTraveled = distanceToTravel * lockVar;
             if (!duration) {
                 adjustedProp.curState[dimension] = adjustedProp.endState[dimension];
             } else {
@@ -753,14 +749,12 @@ define(function (require, exports, module) {
                 adjustedProp.curState[dimension] = (adjustedProp.curState[dimension] + distanceTraveled) || 0;
             }
         });
-    };
+    }
 
-    FlowLayoutNode.prototype._completeFlowCallback = function (options) {
+    _completeFlowCallback(options) {
         if (this._currentCallback) {
             this._currentCallback(options);
             delete this._currentCallback;
         }
-    };
-
-    module.exports = FlowLayoutNode;
-});
+    }
+}
