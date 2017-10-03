@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014 - 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -63,54 +62,59 @@
  * ```
  * @module
  */
-define(function(require, exports, module) {
 
-    // import dependencies
-    var Utility = require('famous/utilities/Utility');
-    var LayoutUtility = require('../LayoutUtility');
+import Utility from 'famous/utilities/Utility.js';
+import LayoutUtility from '../LayoutUtility.js';
+
+
+export default class ListLayout {
+
 
     // Define capabilities of this layout function
-    var capabilities = {
+    static Capabilities = {
         sequence: true,
         direction: [Utility.Direction.Y, Utility.Direction.X],
         scrolling: true,
         trueSize: true,
         sequentialScrollingOptimized: true
-    };
+    }
+
+    static Name = 'ListLayout';
+    static Description = 'List-layout with margins, spacing and sticky headers';
 
     // Data
-    var set = {
+    static set = {
         size: [0, 0],
         translate: [0, 0, 0],
         scrollLength: undefined
     };
-    var margin = [0, 0];
+    static margin = [0, 0];
 
     // Layout function
-    function ListLayout(context, options) {
+    constructor(context, options) {
 
         // Local data
-        var size = context.size;
-        var direction = context.direction;
-        var alignment = context.alignment;
-        var revDirection = direction ? 0 : 1;
-        var offset;
-        var margins = LayoutUtility.normalizeMargins(options.margins);
-        var spacing = options.spacing || 0;
-        var node;
-        var nodeSize;
-        var itemSize;
-        var getItemSize;
-        var lastSectionBeforeVisibleCell;
-        var lastSectionBeforeVisibleCellOffset;
-        var lastSectionBeforeVisibleCellLength;
-        var lastSectionBeforeVisibleCellScrollLength;
-        var lastSectionBeforeVisibleCellTopReached;
-        var firstVisibleCell;
-        var lastNode;
-        var lastCellOffsetInFirstVisibleSection;
-        var isSectionCallback = options.isSectionCallback;
-        var bound;
+        let size = context.size;
+        let direction = context.direction;
+        let alignment = context.alignment;
+        let revDirection = direction ? 0 : 1;
+        let offset;
+        let margins = LayoutUtility.normalizeMargins(options.margins);
+        let spacing = options.spacing || 0;
+        let node;
+        let nodeSize;
+        let itemSize;
+        let getItemSize;
+        let lastSectionBeforeVisibleCell;
+        let lastSectionBeforeVisibleCellOffset;
+        let lastSectionBeforeVisibleCellLength;
+        let lastSectionBeforeVisibleCellScrollLength;
+        let lastSectionBeforeVisibleCellTopReached;
+        let firstVisibleCell;
+        let lastNode;
+        let lastCellOffsetInFirstVisibleSection;
+        let isSectionCallback = options.isSectionCallback;
+        let bound;
 
         //
         // Sanity checks
@@ -291,7 +295,7 @@ define(function(require, exports, module) {
         // Reposition "last section before first visible cell" to the top of the layout
         //
         if (lastSectionBeforeVisibleCell) {
-            var correctedOffset = Math.max(margin[0], lastSectionBeforeVisibleCellOffset);
+            let correctedOffset = Math.max(margin[0], lastSectionBeforeVisibleCellOffset);
             if ((lastCellOffsetInFirstVisibleSection !== undefined) &&
                 (lastSectionBeforeVisibleCellLength > (lastCellOffsetInFirstVisibleSection - margin[0]))) {
                 correctedOffset = ((lastCellOffsetInFirstVisibleSection - lastSectionBeforeVisibleCellLength));
@@ -302,9 +306,4 @@ define(function(require, exports, module) {
             context.set(lastSectionBeforeVisibleCell, set);
         }
     }
-
-    ListLayout.Capabilities = capabilities;
-    ListLayout.Name = 'ListLayout';
-    ListLayout.Description = 'List-layout with margins, spacing and sticky headers';
-    module.exports = ListLayout;
-});
+}

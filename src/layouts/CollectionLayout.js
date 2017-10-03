@@ -1,11 +1,10 @@
-/**
- * This Source Code is licensed under the MIT license. If a copy of the
- * MIT-license was not distributed with this file, You can obtain one at:
- * http://opensource.org/licenses/mit-license.html.
+/* We respect the original MIT open-source license with regards to give credit to the original author Hein Rutjes.
+ * any variations, changes and additions are NPOSL-3 licensed.
+ * WE INTENT TO REPLACE FAMOUS-FLEX completely in the near future. As in ASAP.
  *
- * @author: Hein Rutjes (IjzerenHein)
- * @license MIT
- * @copyright Gloey Apps, 2014 - 2015
+ * @author Hans van den Akker
+ * @license NPOSL-3.0
+ * @copyright Arva 2015-2017
  */
 
 /**
@@ -65,36 +64,40 @@
  * but multiple rows *scroll vertically*, and this is the correct behaviour.
  * @module
  */
-define(function(require, exports, module) {
 
-    // import dependencies
-    var Utility = require('famous/utilities/Utility');
-    var LayoutUtility = require('../LayoutUtility');
+import Utility from 'famous/utilities/Utility.js';
+import LayoutUtility from '../LayoutUtility.js';
+
+
+export default class CollectionLayout {
 
     // Define capabilities of this layout function
-    var capabilities = {
+    static Capabilities = {
         sequence: true,
         direction: [Utility.Direction.Y, Utility.Direction.X],
         scrolling: true,
         trueSize: true,
         sequentialScrollingOptimized: true
-    };
+    }
+
+    static Name = "CollectionLayout";
+    static Description = 'Multi-cell collection-layout with margins & spacing';
 
     // Prepare
-    var context;
-    var size;
-    var direction;
-    var alignment;
-    var lineDirection;
-    var lineLength;
-    var offset;
-    var margins;
-    var margin = [0, 0];
-    var spacing;
-    var justify;
-    var itemSize;
-    var getItemSize;
-    var lineNodes;
+    static context;
+    static size;
+    static direction;
+    static alignment;
+    static lineDirection;
+    static lineLength;
+    static offset;
+    static margins;
+    static margin = [0, 0];
+    static spacing;
+    static justify;
+    static itemSize;
+    static getItemSize;
+    static lineNodes;
 
     /**
      * Lays out the renderables in a single line. Taking into account
@@ -105,27 +108,27 @@ define(function(require, exports, module) {
      * - justify
      * - center align
      */
-    function _layoutLine(next, endReached) {
+    static _layoutLine(next, endReached) {
         if (!lineNodes.length) {
             return 0;
         }
 
         // Determine size of the line
-        var i;
-        var lineSize = [0, 0];
-        var lineNode;
+        let i;
+        let lineSize = [0, 0];
+        let lineNode;
         for (i = 0; i < lineNodes.length; i++) {
             lineSize[direction] = Math.max(lineSize[direction], lineNodes[i].size[direction]);
             lineSize[lineDirection] += ((i > 0) ? spacing[lineDirection] : 0) + lineNodes[i].size[lineDirection];
         }
 
         // Layout nodes from left to right or top to bottom
-        var justifyOffset = justify[lineDirection] ? ((lineLength - lineSize[lineDirection]) / (lineNodes.length * 2)) : 0;
-        var lineOffset = (direction ? margins[3] : margins[0]) + justifyOffset;
-        var scrollLength;
+        let justifyOffset = justify[lineDirection] ? ((lineLength - lineSize[lineDirection]) / (lineNodes.length * 2)) : 0;
+        let lineOffset = (direction ? margins[3] : margins[0]) + justifyOffset;
+        let scrollLength;
         for (i = 0; i < lineNodes.length; i++) {
             lineNode = lineNodes[i];
-            var translate = [0, 0, 0];
+            let translate = [0, 0, 0];
             translate[lineDirection] = lineOffset;
             translate[direction] = next ? offset : (offset - (lineSize[direction]));
             scrollLength = 0;
@@ -160,13 +163,13 @@ define(function(require, exports, module) {
     /**
      * Helper function to resolving the size of a node.
      */
-    function _resolveNodeSize(node) {
-        var localItemSize = itemSize;
+    static _resolveNodeSize(node) {
+        let localItemSize = itemSize;
         if (getItemSize) {
             localItemSize = getItemSize(node.renderNode, size);
         }
         if ((localItemSize[0] === true) || (localItemSize[1] === true)) {
-            var result = context.resolveSize(node, size);
+            let result = context.resolveSize(node, size);
             if (localItemSize[0] !== true) {
                 result[0] = itemSize[0];
             }
@@ -183,7 +186,7 @@ define(function(require, exports, module) {
     /**
      * Collection-layout
      */
-    function CollectionLayout(context_, options) {
+    constructor(context_, options) {
 
         // Prepare
         context = context_;
@@ -195,7 +198,7 @@ define(function(require, exports, module) {
             console.warn('option `gutter` has been deprecated for CollectionLayout, use margins & spacing instead'); //eslint-disable-line no-console
         }
         if (options.gutter && !options.margins && !options.spacing) {
-            var gutter = Array.isArray(options.gutter) ? options.gutter : [options.gutter, options.gutter];
+            let gutter = Array.isArray(options.gutter) ? options.gutter : [options.gutter, options.gutter];
             margins = [gutter[1], gutter[0], gutter[1], gutter[0]];
             spacing = gutter;
         }
@@ -208,10 +211,10 @@ define(function(require, exports, module) {
         margin[1] = -margins[direction ? 2 : 1];
         justify = Array.isArray(options.justify) ? options.justify : (options.justify ? [true, true] : [false, false]);
         lineLength = size[lineDirection] - (direction ? (margins[3] + margins[1]) : (margins[0] + margins[2]));
-        var node;
-        var nodeSize;
-        var lineOffset;
-        var bound;
+        let node;
+        let nodeSize;
+        let lineOffset;
+        let bound;
 
         //
         // Prepare item-size
@@ -286,9 +289,4 @@ define(function(require, exports, module) {
             lineNodes.unshift({node: node, size: nodeSize});
         }
     }
-
-    CollectionLayout.Capabilities = capabilities;
-    CollectionLayout.Name = 'CollectionLayout';
-    CollectionLayout.Description = 'Multi-cell collection-layout with margins & spacing';
-    module.exports = CollectionLayout;
-});
+}
